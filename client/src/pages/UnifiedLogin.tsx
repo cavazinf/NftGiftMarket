@@ -27,7 +27,7 @@ const UnifiedLogin = () => {
   const { isConnected, connect, walletAddress, isConnecting } = useWallet();
   
   // Common state
-  const [selectedSegment, setSelectedSegment] = useState<'b2c' | 'b2b'>('b2c');
+  const [selectedSegment, setSelectedSegment] = useState<string>('b2c');
   const [error, setError] = useState('');
   
   // B2C (Consumer) states
@@ -46,6 +46,10 @@ const UnifiedLogin = () => {
   const [companyId, setCompanyId] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [businessPassword, setBusinessPassword] = useState('');
+  
+  // Admin states
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
 
   // Mock NFTs for demonstration
   const mockNFTs: NFTAuth[] = [
@@ -137,14 +141,18 @@ const UnifiedLogin = () => {
     }
     
     // For demonstration purposes - in a real app, this would check against a database
-    if (username === 'user' && password === 'password') {
+    if (password === '123') {
+      // Set authentication info
+      localStorage.setItem('user_authenticated', 'true');
+      localStorage.setItem('username', username || 'user');
+      
       toast({
         title: "Login successful",
         description: "Welcome back to the platform!",
       });
       setLocation('/dashboard');
     } else {
-      setError('Invalid username or password');
+      setError('Invalid username or password (use "123" for all logins)');
     }
   };
 
@@ -153,20 +161,52 @@ const UnifiedLogin = () => {
     e.preventDefault();
     
     // Simple validation
-    if (!companyId || !employeeId || !businessPassword) {
-      setError('Please fill in all required fields');
+    if (!companyId || !businessPassword) {
+      setError('Please fill in all required fields (Employee ID is optional)');
       return;
     }
     
     // For demonstration purposes - in a real app, this would check against a database
-    if (companyId === 'company123' && businessPassword === 'b2bpass') {
+    if (businessPassword === '123') {
+      // Set authentication info
+      localStorage.setItem('user_authenticated', 'true');
+      localStorage.setItem('username', companyId);
+      localStorage.setItem('user_role', 'business');
+      
       toast({
         title: "Business Login Successful",
         description: "Welcome to the B2B platform.",
       });
       setLocation('/b2b-dashboard');
     } else {
-      setError('Invalid company credentials');
+      setError('Invalid company credentials (use "123" for all logins)');
+    }
+  };
+
+  // Admin login handler
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Simple validation
+    if (!adminPassword) {
+      setError('Please enter the admin password');
+      return;
+    }
+    
+    // For demonstration purposes - in a real app, this would be more secure
+    if (adminPassword === '123') {
+      // Set authentication info
+      localStorage.setItem('user_authenticated', 'true');
+      localStorage.setItem('username', adminUsername || 'admin');
+      localStorage.setItem('user_role', 'admin');
+      
+      toast({
+        title: "Admin Login Successful",
+        description: "Welcome to the admin dashboard!",
+      });
+      setLocation('/admin');
+    } else {
+      setError('Invalid admin password (use "123" for all logins)');
     }
   };
 
@@ -193,7 +233,7 @@ const UnifiedLogin = () => {
             <div className="bg-gray-800/50 p-1 rounded-full flex">
               <Button
                 variant={selectedSegment === 'b2c' ? "default" : "ghost"}
-                className={`rounded-full px-8 ${selectedSegment === 'b2c' ? "" : "text-gray-400"}`}
+                className={`rounded-full px-6 ${selectedSegment === 'b2c' ? "" : "text-gray-400"}`}
                 onClick={() => setSelectedSegment('b2c')}
               >
                 <User className="mr-2 h-4 w-4" />
@@ -202,15 +242,88 @@ const UnifiedLogin = () => {
               
               <Button
                 variant={selectedSegment === 'b2b' ? "default" : "ghost"}
-                className={`rounded-full px-8 ${selectedSegment === 'b2b' ? "" : "text-gray-400"}`}
+                className={`rounded-full px-6 ${selectedSegment === 'b2b' ? "" : "text-gray-400"}`}
                 onClick={() => setSelectedSegment('b2b')}
               >
                 <Building className="mr-2 h-4 w-4" />
                 Business
               </Button>
+              
+              <Button
+                variant={selectedSegment === 'admin' ? "default" : "ghost"}
+                className={`rounded-full px-6 ${selectedSegment === 'admin' ? "" : "text-gray-400"}`}
+                onClick={() => setSelectedSegment('admin')}
+              >
+                <LucideShield className="mr-2 h-4 w-4" />
+                Admin
+              </Button>
             </div>
           </div>
+          
+          <p className="text-sm text-gray-400 mt-2">
+            Use password "123" for all logins in this demo
+          </p>
         </div>
+        
+        {/* Admin Section */}
+        {selectedSegment === 'admin' && (
+          <Card className="border-gray-700 bg-gray-900/60 text-white backdrop-blur-md">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center">Administrator Access</CardTitle>
+              <CardDescription className="text-gray-400 text-center">
+                Access the administrative dashboard
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <form onSubmit={handleAdminLogin}>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="adminUsername">Admin Username (Optional)</Label>
+                    <Input 
+                      id="adminUsername"
+                      placeholder="Enter your admin username" 
+                      value={adminUsername}
+                      onChange={(e) => setAdminUsername(e.target.value)}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="adminPassword">Admin Password</Label>
+                    <Input 
+                      id="adminPassword"
+                      type="password"
+                      placeholder="••••••••" 
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      className="bg-gray-800 border-gray-700"
+                      required
+                    />
+                    <p className="text-xs text-blue-400">
+                      Use "123" for the demo admin password
+                    </p>
+                  </div>
+
+                  {error && (
+                    <Alert variant="destructive" className="bg-red-900/30 border-red-800 text-red-200">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700">
+                    Administrator Login
+                  </Button>
+                  
+                  <div className="text-center text-sm text-gray-400 mt-4">
+                    <LucideShield className="inline-block h-4 w-4 mr-1" />
+                    Administrative access is restricted and monitored
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
         
         {/* B2C Section */}
         {selectedSegment === 'b2c' && (
