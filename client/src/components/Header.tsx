@@ -95,9 +95,9 @@ const Header = ({ openWalletModal }: HeaderProps) => {
           <div className="container mx-auto px-4 space-y-2">
             {navItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <a className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg ${location === item.path ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                <div className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg ${location === item.path ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
                   {item.title}
-                </a>
+                </div>
               </Link>
             ))}
             <div className="relative mt-2">
