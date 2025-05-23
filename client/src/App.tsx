@@ -9,6 +9,7 @@ import Marketplace from "@/pages/Marketplace";
 import Features from "@/pages/Features";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import Admin from "@/pages/Admin";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -21,19 +22,39 @@ import { WalletProvider, useWallet } from "@/hooks/useWallet";
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const [_, setLocation] = useLocation();
   const { isConnected } = useWallet();
+  const isAuthenticated = localStorage.getItem('user_authenticated') === 'true';
   
   useEffect(() => {
-    if (!isConnected) {
+    if (!isConnected && !isAuthenticated) {
       setLocation('/login');
     }
-  }, [isConnected, setLocation]);
+  }, [isConnected, isAuthenticated, setLocation]);
   
-  return isConnected ? <Component /> : null;
+  return (isConnected || isAuthenticated) ? <Component /> : null;
+}
+
+// Componente para proteção de rotas que requerem direitos de admin
+function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const [_, setLocation] = useLocation();
+  const isAuthenticated = localStorage.getItem('user_authenticated') === 'true';
+  const userRole = localStorage.getItem('user_role');
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLocation('/login');
+    } else if (userRole !== 'admin') {
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, userRole, setLocation]);
+  
+  return (isAuthenticated && userRole === 'admin') ? <Component /> : null;
 }
 
 function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) {
   const [location] = useLocation();
-  const showHeaderFooter = !location.includes('/login') && !location.includes('/dashboard');
+  const showHeaderFooter = !location.includes('/login') && 
+                           !location.includes('/dashboard') && 
+                           !location.includes('/admin');
   
   return (
     <>
@@ -44,6 +65,7 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
         <Route path="/features" component={Features} />
         <Route path="/login" component={Login} />
         <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
+        <Route path="/admin" component={() => <AdminRoute component={Admin} />} />
         <Route component={NotFound} />
       </Switch>
       {showHeaderFooter && <Footer />}

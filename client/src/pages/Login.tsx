@@ -1,255 +1,194 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useWallet } from '@/hooks/useWallet';
-import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, Wallet } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Schemas de validação
-const loginSchema = z.object({
-  username: z.string().min(3, 'Nome de usuário deve ter pelo menos 3 caracteres'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-
-// Login Page Component
 const Login = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('wallet');
   const [_, setLocation] = useLocation();
-  const { toast } = useToast();
   const { connect, isConnected, isConnecting } = useWallet();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Redirecionar se já estiver logado
+  const handleWalletConnect = async () => {
+    try {
+      await connect('metamask');
+      setTimeout(() => {
+        setLocation('/dashboard');
+      }, 500);
+    } catch (error) {
+      setError('Falha ao conectar carteira. Tente novamente.');
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    
+    try {
+      // Verificar credenciais
+      if (username === 'admin' && password === '123') {
+        // Admin login
+        localStorage.setItem('user_role', 'admin');
+        localStorage.setItem('user_authenticated', 'true');
+        setTimeout(() => {
+          setLocation('/admin');
+        }, 500);
+      } else if (username === 'usuario' && password === '123') {
+        // User login
+        localStorage.setItem('user_role', 'user');
+        localStorage.setItem('user_authenticated', 'true');
+        setTimeout(() => {
+          setLocation('/dashboard');
+        }, 500);
+      } else {
+        setError('Credenciais inválidas. Tente novamente.');
+      }
+    } catch (error) {
+      setError('Erro no login. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Verificar se o usuário já está autenticado
   if (isConnected) {
     setLocation('/dashboard');
     return null;
   }
 
-  // Form de login com React Hook Form
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: '',
-      password: '',
-    },
-  });
-
-  // Função para conectar via carteira
-  const handleConnectWallet = async (type: string) => {
-    try {
-      await connect(type);
-      toast({
-        title: 'Carteira conectada com sucesso',
-        description: 'Você será redirecionado para o dashboard.',
-      });
-      
-      // Dar tempo para a toast aparecer antes de redirecionar
-      setTimeout(() => {
-        setLocation('/dashboard');
-      }, 1000);
-    } catch (error) {
-      toast({
-        title: 'Erro ao conectar carteira',
-        description: 'Tente novamente ou use outro método de conexão.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Função para login tradicional
-  const handleLoginSubmit = async (data: LoginFormValues) => {
-    setIsLoggingIn(true);
-    
-    try {
-      // Simulação de chamada de API para login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Exemplo de verificação (deve ser substituído por chamada real à API)
-      if (data.username === 'admin' && data.password === 'password') {
-        toast({
-          title: 'Login realizado com sucesso',
-          description: 'Bem-vindo de volta!',
-        });
-        
-        // Dar tempo para a toast aparecer antes de redirecionar
-        setTimeout(() => {
-          setLocation('/dashboard');
-        }, 1000);
-      } else {
-        toast({
-          title: 'Erro ao fazer login',
-          description: 'Usuário ou senha incorretos.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Erro ao fazer login',
-        description: 'Ocorreu um erro ao tentar fazer login.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
   return (
-    <div className="container flex items-center justify-center min-h-[80vh]">
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl mb-2">Acesse o Dashboard</CardTitle>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 p-4">
+      <Card className="w-full max-w-md shadow-xl border-0">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">NFTGift Cards</CardTitle>
           <CardDescription>
-            Faça login para gerenciar seus NFT Gift Cards
+            Entre na sua conta para gerenciar seus gift cards
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="wallet" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="wallet">Carteira Web3</TabsTrigger>
-              <TabsTrigger value="credentials">Login/Senha</TabsTrigger>
+          <Tabs 
+            defaultValue="wallet" 
+            value={activeTab} 
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="wallet">Conectar Carteira</TabsTrigger>
+              <TabsTrigger value="credentials">Credenciais</TabsTrigger>
             </TabsList>
             
-            {/* Login com Carteira Web3 */}
-            <TabsContent value="wallet" className="space-y-4 py-4">
-              <div className="space-y-2">
-                <p className="text-sm text-center text-muted-foreground">
-                  Conecte sua carteira para acessar seu dashboard de NFT Gift Cards
+            <TabsContent value="wallet" className="space-y-4">
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Conecte sua carteira Web3 para acessar a plataforma
                 </p>
                 
-                <div className="grid gap-3 pt-4">
-                  <Button 
-                    className="w-full" 
-                    onClick={() => handleConnectWallet('metamask')}
-                    disabled={isConnecting}
-                  >
-                    {isConnecting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Conectando...
-                      </>
-                    ) : (
-                      <>
-                        <Wallet className="mr-2 h-4 w-4" />
-                        Conectar com MetaMask
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={() => handleConnectWallet('walletconnect')}
-                    disabled={isConnecting}
-                  >
-                    {isConnecting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Conectando...
-                      </>
-                    ) : (
-                      <>
-                        <Wallet className="mr-2 h-4 w-4" />
-                        Conectar com WalletConnect
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Ou
-                  </span>
-                </div>
-              </div>
-              
-              <div className="text-sm text-center text-muted-foreground">
-                <p>
-                  Não tem uma carteira Web3?{' '}
-                  <Button variant="link" className="p-0 h-auto" onClick={() => document.querySelector('[data-value="credentials"]')?.click()}>
-                    Use login e senha
-                  </Button>
+                <Button 
+                  onClick={handleWalletConnect} 
+                  className="w-full h-14"
+                  disabled={isConnecting}
+                >
+                  {isConnecting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Conectando...
+                    </>
+                  ) : (
+                    <>Conectar Carteira</>
+                  )}
+                </Button>
+                
+                <p className="text-xs text-muted-foreground mt-4">
+                  Ao conectar, você concorda com os termos e condições da plataforma
                 </p>
               </div>
             </TabsContent>
             
-            {/* Login com Credenciais */}
-            <TabsContent value="credentials" className="py-4">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleLoginSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome de Usuário</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Digite seu usuário" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <TabsContent value="credentials" className="space-y-4">
+              <form onSubmit={handleLogin}>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Usuário</Label>
+                    <Input 
+                      id="username"
+                      placeholder="Digite seu usuário" 
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </div>
                   
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Senha</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="Digite sua senha" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Senha</Label>
+                      <Button variant="link" size="sm" className="p-0 h-auto text-xs">
+                        Esqueceu a senha?
+                      </Button>
+                    </div>
+                    <Input 
+                      id="password"
+                      type="password" 
+                      placeholder="Digite sua senha" 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
                   
                   <Button 
                     type="submit" 
-                    className="w-full" 
-                    disabled={isLoggingIn}
+                    className="w-full"
+                    disabled={isLoading}
                   >
-                    {isLoggingIn ? (
+                    {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Entrando...
+                        Processando...
                       </>
                     ) : (
-                      'Entrar'
+                      <>Entrar</>
                     )}
                   </Button>
-                </form>
-              </Form>
+                </div>
+              </form>
               
-              <div className="mt-4 text-sm text-center text-muted-foreground">
-                <p>
-                  Prefere usar sua carteira?{' '}
-                  <Button variant="link" className="p-0 h-auto" onClick={() => document.querySelector('[data-value="wallet"]')?.click()}>
-                    Conectar carteira
-                  </Button>
+              <div className="mt-4 text-center text-sm">
+                <p className="text-xs text-muted-foreground">
+                  Admin - Usuário: admin / Senha: 123<br />
+                  Usuário - Usuário: usuario / Senha: 123
                 </p>
               </div>
             </TabsContent>
           </Tabs>
         </CardContent>
+        
+        <CardFooter className="flex flex-col">
+          <div className="mt-4 text-center text-sm">
+            <span className="text-muted-foreground">
+              Não tem uma conta?{' '}
+            </span>
+            <Button variant="link" className="p-0 h-auto" onClick={() => setLocation('/')}>
+              Crie uma agora
+            </Button>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );
