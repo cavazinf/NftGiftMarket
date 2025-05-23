@@ -108,6 +108,72 @@ const NFTLogin = () => {
     });
   };
 
+  // Login social (Google, Facebook)
+  const handleSocialLogin = async (provider: string) => {
+    setIsAuthenticating(true);
+    
+    // Simular login social
+    setTimeout(() => {
+      // Para usuários Web2, pular direto para autenticação 2FA
+      setCurrentStep(3);
+      setIsAuthenticating(false);
+      
+      // Simular que o usuário tem NFTs associados à conta social
+      setUserNFTs(mockNFTs.slice(0, 2)); // Mostrar apenas alguns NFTs
+      
+      toast({
+        title: `Login com ${provider} realizado!`,
+        description: `${mockNFTs.slice(0, 2).length} NFTs encontrados na sua conta.`
+      });
+    }, 1500);
+  };
+
+  // Mostrar formulário de email
+  const handleEmailLogin = () => {
+    setShowEmailForm(true);
+  };
+
+  // Processar login por email
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    
+    setIsAuthenticating(true);
+    
+    // Verificar credenciais de admin
+    if (email.toLowerCase() === 'admin' && password === '123') {
+      setTimeout(() => {
+        setCurrentStep(4); // Pular direto para acesso autorizado
+        setIsAuthenticating(false);
+        setShowEmailForm(false);
+        
+        // Admin tem acesso total a todos os NFTs
+        setUserNFTs(mockNFTs);
+        
+        toast({
+          title: '🔑 Acesso de Administrador!',
+          description: `Bem-vindo Admin! Acesso total ao sistema concedido.`
+        });
+      }, 1500);
+      return;
+    }
+    
+    // Login normal para outros usuários
+    setTimeout(() => {
+      setCurrentStep(3);
+      setIsAuthenticating(false);
+      setShowEmailForm(false);
+      
+      // Simular que o usuário tem NFTs associados ao email
+      setUserNFTs(mockNFTs.slice(0, 3));
+      
+      toast({
+        title: 'Login realizado com sucesso!',
+        description: `Bem-vindo ${email}! ${mockNFTs.slice(0, 3).length} NFTs encontrados.`
+      });
+    }, 1500);
+  };
+
   // Verificar propriedade do NFT
   const verifyNFTOwnership = async () => {
     if (!selectedNFT) return;
@@ -281,6 +347,86 @@ const NFTLogin = () => {
                     <Wallet className="h-6 w-6" />
                     <span>WalletConnect</span>
                   </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Formulário de Email */}
+            {showEmailForm && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-white">Login com Email</h3>
+                  <Button
+                    onClick={() => setShowEmailForm(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    ✕
+                  </Button>
+                </div>
+                
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="seu@email.com"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Senha
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Digite sua senha"
+                      required
+                    />
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    disabled={isAuthenticating || !email || !password}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isAuthenticating ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Fazendo login...
+                      </div>
+                    ) : (
+                      'Entrar'
+                    )}
+                  </Button>
+                </form>
+                
+                <div className="space-y-2">
+                  <div className="bg-blue-900/20 border border-blue-700/30 rounded-md p-3">
+                    <p className="text-xs text-blue-300 font-medium mb-1">
+                      💡 Credenciais de Teste:
+                    </p>
+                    <p className="text-xs text-gray-300">
+                      <strong>Admin:</strong> admin / 123 (Acesso total)
+                    </p>
+                  </div>
+                  
+                  <p className="text-sm text-gray-400 text-center">
+                    Não tem conta? 
+                    <span className="text-blue-400 hover:text-blue-300 cursor-pointer ml-1">
+                      Criar conta
+                    </span>
+                  </p>
                 </div>
               </div>
             )}
