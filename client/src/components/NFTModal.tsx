@@ -210,9 +210,11 @@ export const NFTModal = ({ nft, isOpen, onClose }: NFTModalProps) => {
                     <>
                       <p className="mb-4">This exclusive {nft.category} voucher includes:</p>
                       <ul className="list-disc pl-5 space-y-2">
-                        {nft.benefits.map((benefit, index) => (
+                        {nft.benefits && Array.isArray(nft.benefits) ? nft.benefits.map((benefit, index) => (
                           <li key={index}>{benefit}</li>
-                        ))}
+                        )) : (
+                          <li>Premium benefits included</li>
+                        )}
                       </ul>
                       {nft.validFor && (
                         <p className="mt-4">Valid for {nft.validFor}</p>
