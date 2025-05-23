@@ -23,6 +23,7 @@ const Header = ({ openWalletModal }: HeaderProps) => {
     { title: "Recursos", path: "/features" },
     { title: "Collections", path: "/collections" },
     { title: "Create", path: "/create" },
+    { title: "Dashboard", path: "/dashboard" },
   ];
 
   return (

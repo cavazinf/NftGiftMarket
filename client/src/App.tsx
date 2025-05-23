@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,22 +7,47 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Marketplace from "@/pages/Marketplace";
 import Features from "@/pages/Features";
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NFTModal } from "@/components/NFTModal";
 import { WalletConnectModal } from "@/components/WalletConnectModal";
 import { NFTGiftCard } from "@/lib/types";
-import { WalletProvider } from "@/hooks/useWallet";
+import { WalletProvider, useWallet } from "@/hooks/useWallet";
+
+// Componente para proteção de rotas que requerem autenticação
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const [_, setLocation] = useLocation();
+  const { isConnected } = useWallet();
+  
+  useEffect(() => {
+    if (!isConnected) {
+      setLocation('/login');
+    }
+  }, [isConnected, setLocation]);
+  
+  return isConnected ? <Component /> : null;
+}
 
 function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) {
+  const [location] = useLocation();
+  const showHeaderFooter = !location.includes('/login') && !location.includes('/dashboard');
+  
   return (
-    <Switch>
-      <Route path="/" component={() => <Home />} />
-      <Route path="/marketplace" component={() => <Marketplace openNFTModal={openNFTModal} />} />
-      <Route path="/features" component={Features} />
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      {showHeaderFooter && <Header openWalletModal={() => {}} />}
+      <Switch>
+        <Route path="/" component={() => <Home />} />
+        <Route path="/marketplace" component={() => <Marketplace openNFTModal={openNFTModal} />} />
+        <Route path="/features" component={Features} />
+        <Route path="/login" component={Login} />
+        <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
+        <Route component={NotFound} />
+      </Switch>
+      {showHeaderFooter && <Footer />}
+    </>
   );
 }
 
@@ -45,11 +70,9 @@ function App() {
       <WalletProvider>
         <TooltipProvider>
           <div className="flex flex-col min-h-screen">
-            <Header openWalletModal={openWalletModal} />
             <main className="flex-grow">
               <Router openNFTModal={openNFTModal} />
             </main>
-            <Footer />
           </div>
           {isNFTModalOpen && selectedNFT && (
             <NFTModal nft={selectedNFT} isOpen={isNFTModalOpen} onClose={closeNFTModal} />
