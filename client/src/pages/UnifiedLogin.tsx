@@ -202,9 +202,9 @@ const UnifiedLogin = () => {
       
       toast({
         title: "Admin Login Successful",
-        description: "Welcome to the admin dashboard!",
+        description: "Welcome to the marketplace!",
       });
-      setLocation('/admin');
+      setLocation('/marketplace');
     } else {
       setError('Invalid admin password (use "123" for all logins)');
     }
