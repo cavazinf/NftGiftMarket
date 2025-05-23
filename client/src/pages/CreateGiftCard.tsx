@@ -168,12 +168,16 @@ const CreateGiftCard = () => {
       // Token URI (em produção, seria armazenado em IPFS)
       const tokenURI = `data:application/json;base64,${btoa(metadata)}`;
 
-      // Mintar o NFT
+      // Converter o valor USD para ETH usando a função de cálculo
+      const valueInEth = parseFloat(calculateEth(priceUsd));
+      console.log("Valor em ETH a ser enviado:", valueInEth);
+      
+      // Mintar o NFT com o saldo
       const result = await mintGiftCard(
         walletAddress!, // Destinatário
         merchant, // Nome do comerciante
         category, // Categoria
-        parseFloat(priceUsd), // Valor em ETH
+        valueInEth, // Valor em ETH calculado
         isRechargeable, // É recarregável
         expirationDays, // Dias para expiração
         tokenURI, // URI dos metadados

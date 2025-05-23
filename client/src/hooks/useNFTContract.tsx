@@ -74,9 +74,11 @@ export function useNFTContract() {
       const valueInWei = ethers.parseEther(valueInEth.toString());
       const expirationDate = Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60);
       
+      // Log para debugging
       console.log("Minting NFT with value:", valueInEth, "ETH");
+      console.log("Value in Wei:", valueInWei.toString());
       
-      // Send value with the transaction to fund the NFT balance
+      // Para garantir que o valor seja enviado corretamente com a transação
       const tx = await contract.mintGiftCard(
         recipient,
         merchantName,
@@ -86,7 +88,10 @@ export function useNFTContract() {
         expirationDate,
         tokenURI,
         metadata,
-        { value: valueInWei } // Send ETH with the transaction
+        { 
+          value: valueInWei, // Enviamos o ETH com a transação
+          gasLimit: 500000 // Limite de gas adequado para essa operação
+        }
       );
 
       const receipt = await tx.wait();
