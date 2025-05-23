@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
@@ -41,7 +41,7 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
         uint256 amount
     );
     
-    constructor() ERC721("NFT Gift Card", "NFTGC") {}
+    constructor() ERC721("NFT Gift Card", "NFTGC") Ownable(msg.sender) {}
     
     function mintGiftCard(
         address to,
@@ -50,14 +50,14 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
         uint256 valueInWei,
         bool isRechargeable,
         uint256 expirationDate,
-        string memory tokenURI,
+        string memory _tokenURI,
         string memory metadata
     ) public onlyOwner returns (uint256) {
         uint256 tokenId = _tokenIdCounter;
         _tokenIdCounter++;
         
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, tokenURI);
+        _setTokenURI(tokenId, _tokenURI);
         
         giftCards[tokenId] = GiftCard({
             merchantName: merchantName,
@@ -78,7 +78,7 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
     }
     
     function redeemGiftCard(uint256 tokenId, uint256 amount) public {
-        require(_exists(tokenId), "Gift card does not exist");
+        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
         require(ownerOf(tokenId) == msg.sender, "Not the owner of this gift card");
         require(giftCards[tokenId].isRedeemable, "Gift card is not redeemable");
         require(giftCards[tokenId].balanceInWei >= amount, "Insufficient balance");
@@ -94,7 +94,7 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
     }
     
     function rechargeGiftCard(uint256 tokenId) public payable {
-        require(_exists(tokenId), "Gift card does not exist");
+        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
         require(ownerOf(tokenId) == msg.sender, "Not the owner of this gift card");
         require(giftCards[tokenId].isRechargeable, "Gift card is not rechargeable");
         require(msg.value > 0, "Must send some value to recharge");
@@ -106,7 +106,7 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
     }
     
     function getGiftCard(uint256 tokenId) public view returns (GiftCard memory) {
-        require(_exists(tokenId), "Gift card does not exist");
+        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
         return giftCards[tokenId];
     }
     
@@ -115,12 +115,12 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
     }
     
     function getBalance(uint256 tokenId) public view returns (uint256) {
-        require(_exists(tokenId), "Gift card does not exist");
+        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
         return giftCards[tokenId].balanceInWei;
     }
     
     function isExpired(uint256 tokenId) public view returns (bool) {
-        require(_exists(tokenId), "Gift card does not exist");
+        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
         return block.timestamp > giftCards[tokenId].expirationDate;
     }
     
