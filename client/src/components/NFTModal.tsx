@@ -1,10 +1,13 @@
 import { NFTGiftCard, Transaction } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { X, Star, Shield, ArrowUpDown, Calendar, RefreshCw, Zap, ChevronDown, Eye, CreditCard } from "lucide-react";
+import { X, Star, Shield, ArrowUpDown, Calendar, RefreshCw, Zap, ChevronDown, Eye, CreditCard, Store, Landmark, Receipt } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TRANSACTIONS } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,7 +23,24 @@ export const NFTModal = ({ nft, isOpen, onClose }: NFTModalProps) => {
   const [rechargeOptions] = useState([0.05, 0.1, 0.25, 0.5]);
   const [isRecharging, setIsRecharging] = useState(false);
   const [showZkProof, setShowZkProof] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [paymentMerchant, setPaymentMerchant] = useState<string>("");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isGeneratingChange, setIsGeneratingChange] = useState(false);
+  const [changeAmount, setChangeAmount] = useState<string>("");
   const { toast } = useToast();
+  
+  // Lista de comerciantes de exemplo
+  const merchants = [
+    "Café Expresso",
+    "Livraria Mundial",
+    "Supermercado Dia",
+    "Farmácia Saúde",
+    "Cinema Star",
+    "Posto Avenida",
+    "Restaurante Sabor",
+    "Viagens Mundo"
+  ];
 
   const increaseQuantity = () => {
     setQuantity(prev => prev + 1);
