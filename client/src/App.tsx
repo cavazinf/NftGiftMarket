@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Marketplace from "@/pages/Marketplace";
+import Features from "@/pages/Features";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState } from "react";
@@ -19,6 +20,7 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
     <Switch>
       <Route path="/" component={() => <Home />} />
       <Route path="/marketplace" component={() => <Marketplace openNFTModal={openNFTModal} />} />
+      <Route path="/features" component={Features} />
       <Route component={NotFound} />
     </Switch>
   );

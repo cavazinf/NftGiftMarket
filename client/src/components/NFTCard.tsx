@@ -1,6 +1,7 @@
-import { Heart } from "lucide-react";
+import { Heart, Shield, RefreshCw } from "lucide-react";
 import { NFTGiftCard } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
 interface NFTCardProps {
@@ -29,6 +30,8 @@ const NFTCard = ({ nft, onViewDetails }: NFTCardProps) => {
       entertainment: "bg-purple-500/90",
       subscription: "bg-indigo-500/90",
       services: "bg-teal-500/90",
+      defi: "bg-green-600/90",
+      nft: "bg-purple-600/90",
     };
     return colors[category] || "bg-gray-500/90";
   };
@@ -64,19 +67,58 @@ const NFTCard = ({ nft, onViewDetails }: NFTCardProps) => {
             <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
           </button>
         )}
+        
+        {nft.merchant && nft.merchant.logo && (
+          <div className="absolute bottom-3 left-3">
+            <div className="flex items-center bg-white/90 dark:bg-gray-800/90 rounded-full p-1 backdrop-blur-sm">
+              <img 
+                src={nft.merchant.logo} 
+                alt={nft.merchant.name}
+                className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="p-5">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-semibold text-lg">{nft.title}</h3>
-          {nft.isVerified && (
-            <div className="flex items-center bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded text-green-600 dark:text-green-400 text-xs font-medium">
-              <span>Verified</span>
-            </div>
-          )}
+          <div className="flex space-x-1">
+            {nft.isVerified && (
+              <div className="flex items-center bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded text-green-600 dark:text-green-400 text-xs font-medium">
+                <span>Verified</span>
+              </div>
+            )}
+            {nft.standard === "ERC-6551" && (
+              <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded text-blue-600 dark:text-blue-400 text-xs font-medium">
+                <span>Smart NFT</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">{nft.description}</p>
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{nft.description}</p>
+        
+        <div className="flex flex-wrap gap-2 mb-4">
+          {nft.blockchain && (
+            <Badge variant="outline" className="bg-gray-50 dark:bg-gray-800 text-xs">
+              {nft.blockchain}
+            </Badge>
+          )}
+          {nft.isRechargeable && (
+            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 text-xs">
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Rechargeable
+            </Badge>
+          )}
+          {nft.hasZkPrivacy && (
+            <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800 text-xs">
+              <Shield className="h-3 w-3 mr-1" />
+              Private
+            </Badge>
+          )}
+        </div>
 
         <div className="flex justify-between items-center">
           <div>
