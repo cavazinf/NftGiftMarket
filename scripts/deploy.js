@@ -1,5 +1,11 @@
 
-const { ethers } = require("hardhat");
+import { ethers } from "hardhat";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
   console.log("Iniciando deploy do NFTGiftCard...");
@@ -16,11 +22,10 @@ async function main() {
   console.log("NFTGiftCard deployed to:", contractAddress);
   
   // Salvar endereço e ABI para o frontend
-  const fs = require("fs");
-  const contractsDir = "./client/src/contracts";
+  const contractsDir = path.join(__dirname, "../client/src/contracts");
 
   if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir);
+    fs.mkdirSync(contractsDir, { recursive: true });
   }
 
   const contractInfo = {
@@ -29,11 +34,11 @@ async function main() {
   };
   
   fs.writeFileSync(
-    `${contractsDir}/NFTGiftCard.json`,
+    path.join(contractsDir, "NFTGiftCard.json"),
     JSON.stringify(contractInfo, null, 2)
   );
   
-  console.log("Contract info saved to", `${contractsDir}/NFTGiftCard.json`);
+  console.log("Contract info saved to", path.join(contractsDir, "NFTGiftCard.json"));
 }
 
 main()

@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/runner/workspace/contracts/NFTGiftCard.sol": {
-      "lastModificationDate": 1748029668190,
-      "contentHash": "4d9d12ec61144776ffc4dfc0c3f48768",
+      "lastModificationDate": 1748032528860,
+      "contentHash": "4a2448cbe37292cd7c0d9bea66442270",
       "sourceName": "contracts/NFTGiftCard.sol",
       "solcConfig": {
         "version": "0.8.20",

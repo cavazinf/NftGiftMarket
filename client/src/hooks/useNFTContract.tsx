@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from './useWallet';
 
+// Simulação Local para desenvolvimento
+const USE_MOCK_CONTRACT = true; // Configuração para permitir uso sem blockchain
+let mockTokenIdCounter = 1;
+const mockGiftCards = new Map();
+const mockUserGiftCards = new Map();
+
 // Deployed contract address
 // Get this from your deployment logs or NFTGiftCard.json
 let CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Default address
@@ -65,10 +71,58 @@ export function useNFTContract() {
     tokenURI: string,
     metadata: string
   ) => {
-    if (!contract || !walletAddress) {
-      throw new Error('Contract not available or wallet not connected');
+    // Usando a simulação quando estamos em modo de desenvolvimento ou quando não há contrato
+    if (USE_MOCK_CONTRACT || !contract || !walletAddress) {
+      console.log("Usando simulação para criar NFT Gift Card");
+      
+      setIsLoading(true);
+      try {
+        // Simular um atraso para dar sensação de processamento
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const valueInWei = ethers.parseEther(valueInEth.toString());
+        const expirationDate = Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60);
+        
+        // Criar o NFT simulado
+        const tokenId = mockTokenIdCounter++;
+        
+        mockGiftCards.set(tokenId, {
+          merchantName: merchantName,
+          category: category,
+          valueInWei: valueInWei,
+          balanceInWei: valueInWei, // O saldo é igual ao valor inicial
+          isRedeemable: true,
+          isRechargeable: isRechargeable,
+          expirationDate: expirationDate,
+          metadata: metadata
+        });
+        
+        // Adicionar o tokenId à lista do usuário
+        if (!mockUserGiftCards.has(recipient)) {
+          mockUserGiftCards.set(recipient, []);
+        }
+        mockUserGiftCards.get(recipient).push(tokenId);
+        
+        console.log("NFT Gift Card simulado criado com sucesso:", {
+          tokenId,
+          value: valueInEth,
+          balance: valueInEth
+        });
+        
+        return {
+          success: true,
+          tokenId: tokenId.toString(),
+          transactionHash: `mock_tx_${Math.random().toString(36).substring(2, 15)}`
+        };
+      } catch (error: any) {
+        console.error('Erro na simulação:', error);
+        throw new Error(error.message || 'Falha ao simular criação do NFT Gift Card');
+      } finally {
+        setIsLoading(false);
+      }
     }
-
+    
+    // Código original para quando o contrato está disponível
     setIsLoading(true);
     try {
       const valueInWei = ethers.parseEther(valueInEth.toString());
@@ -126,6 +180,28 @@ export function useNFTContract() {
   };
 
   const getGiftCard = async (tokenId: string): Promise<NFTGiftCardData | null> => {
+    // Simulação quando em modo de desenvolvimento
+    if (USE_MOCK_CONTRACT) {
+      console.log("Usando simulação para obter NFT Gift Card");
+      const tokenIdNum = parseInt(tokenId);
+      
+      if (mockGiftCards.has(tokenIdNum)) {
+        const card = mockGiftCards.get(tokenIdNum);
+        return {
+          merchantName: card.merchantName,
+          category: card.category,
+          valueInWei: card.valueInWei,
+          balanceInWei: card.balanceInWei,
+          isRedeemable: card.isRedeemable,
+          isRechargeable: card.isRechargeable,
+          expirationDate: card.expirationDate,
+          metadata: card.metadata
+        };
+      }
+      return null;
+    }
+    
+    // Código original para quando o contrato está disponível
     if (!contract) return null;
 
     try {
@@ -147,6 +223,17 @@ export function useNFTContract() {
   };
 
   const getUserGiftCards = async (userAddress: string): Promise<string[]> => {
+    // Simulação quando em modo de desenvolvimento
+    if (USE_MOCK_CONTRACT) {
+      console.log("Usando simulação para obter NFTs do usuário");
+      
+      if (mockUserGiftCards.has(userAddress)) {
+        return mockUserGiftCards.get(userAddress).map(id => id.toString());
+      }
+      return [];
+    }
+    
+    // Código original para quando o contrato está disponível
     if (!contract) return [];
 
     try {
