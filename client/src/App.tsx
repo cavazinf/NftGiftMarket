@@ -21,6 +21,9 @@ import FintechDApp from "@/pages/FintechDApp";
 import Collections from "@/pages/Collections";
 import DApps from "@/pages/DApps";
 import NFTLogin from "@/pages/NFTLogin";
+import UseGiftCard from "@/pages/UseGiftCard";
+import CreateChange from "@/pages/CreateChange";
+import MerchantPayment from "@/pages/MerchantPayment";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -71,6 +74,9 @@ function Router({ openNFTModal, openWalletModal }: {
                            !location.includes('/dashboard') && 
                            !location.includes('/admin') &&
                            !location.includes('/create-gift-card') &&
+                           !location.includes('/use-gift-card') &&
+                           !location.includes('/create-change') &&
+                           !location.includes('/merchant-payment') &&
                            !location.includes('/b2b-dashboard') &&
                            !location.includes('/defi') &&
                            !location.includes('/zk-privacy') &&
@@ -102,6 +108,9 @@ function Router({ openNFTModal, openWalletModal }: {
         <Route path="/fintech-dapp" component={() => <ProtectedRoute component={FintechDApp} />} />
         <Route path="/collections" component={Collections} />
         <Route path="/dapps" component={DApps} />
+        <Route path="/use-gift-card" component={() => <ProtectedRoute component={UseGiftCard} />} />
+        <Route path="/create-change" component={() => <ProtectedRoute component={CreateChange} />} />
+        <Route path="/merchant-payment" component={() => <ProtectedRoute component={MerchantPayment} />} />
         <Route component={NotFound} />
       </Switch>
       {showHeaderFooter && <Footer />}

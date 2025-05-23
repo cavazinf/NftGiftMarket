@@ -52,6 +52,117 @@ export function useNFTContract() {
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Nova função para gerar troco
+  const gerarTroco = async (tokenId: string, amountInEth: number) => {
+    if (USE_MOCK_CONTRACT || !contract || !walletAddress) {
+      console.log("Usando simulação para gerar troco");
+      
+      setIsLoading(true);
+      try {
+        // Simular um atraso para dar sensação de processamento
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const tokenIdNum = parseInt(tokenId);
+        const amountInWei = ethers.parseEther(amountInEth.toString());
+        
+        if (mockGiftCards.has(tokenIdNum)) {
+          const card = mockGiftCards.get(tokenIdNum);
+          
+          // Verificar se há saldo suficiente
+          if ((card.valor - card.usado) < amountInWei) {
+            throw new Error("Saldo insuficiente para gerar troco");
+          }
+          
+          // Criar um novo Gift Card com o valor do troco
+          const newTokenId = mockTokenIdCounter++;
+          
+          // Deduzir o valor do cartão original
+          card.usado = card.usado + amountInWei;
+          
+          // Criar um novo cartão com o troco
+          mockGiftCards.set(newTokenId, {
+            comerciante: card.comerciante,
+            categoria: card.categoria,
+            valor: amountInWei,
+            usado: ethers.parseEther("0"),
+            recarregavel: card.recarregavel,
+            dataExpiracao: card.dataExpiracao,
+            metadata: card.metadata
+          });
+          
+          // Adicionar o novo cartão à lista do usuário
+          if (!mockUserGiftCards.has(walletAddress)) {
+            mockUserGiftCards.set(walletAddress, []);
+          }
+          mockUserGiftCards.get(walletAddress).push(newTokenId);
+          
+          console.log("Troco gerado com sucesso:", {
+            originalTokenId: tokenIdNum,
+            newTokenId: newTokenId,
+            amount: amountInEth
+          });
+          
+          return {
+            success: true,
+            originalTokenId: tokenIdNum,
+            newTokenId: newTokenId.toString(),
+            transactionHash: `mock_tx_${Math.random().toString(36).substring(2, 15)}`
+          };
+        } else {
+          throw new Error("Gift Card não encontrado");
+        }
+        
+      } catch (error: any) {
+        console.error('Erro na simulação de troco:', error);
+        throw new Error(error.message || 'Falha ao gerar troco');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    // Implementação real usando o contrato
+    setIsLoading(true);
+    try {
+      const amountInWei = ethers.parseEther(amountInEth.toString());
+      
+      const tx = await contract.gerarTroco(tokenId, amountInWei, {
+        gasLimit: 300000
+      });
+      
+      const receipt = await tx.wait();
+      
+      // Encontrar o evento TrocoGerado para obter o ID do novo token
+      const event = receipt.logs.find((log: any) => {
+        try {
+          const decoded = contract.interface.parseLog(log);
+          return decoded && decoded.name === 'TrocoGerado';
+        } catch {
+          return false;
+        }
+      });
+      
+      let originalTokenId = null;
+      let newTokenId = null;
+      if (event) {
+        const decoded = contract.interface.parseLog(event);
+        originalTokenId = decoded?.args[0];
+        newTokenId = decoded?.args[1];
+      }
+      
+      return {
+        success: true,
+        originalTokenId: originalTokenId?.toString(),
+        newTokenId: newTokenId?.toString(),
+        transactionHash: receipt.hash
+      };
+    } catch (error: any) {
+      console.error('Erro ao gerar troco:', error);
+      throw new Error(error.message || 'Falha ao gerar troco');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (provider && isConnected) {
       try {
@@ -318,6 +429,78 @@ export function useNFTContract() {
     }
   };
 
+  // Função já definida em outro lugar, removendo esta duplicação
+    if (USE_MOCK_CONTRACT || !contract || !walletAddress) {
+      console.log("Usando simulação para resgatar valor do gift card");
+      
+      setIsLoading(true);
+      try {
+        // Simular um atraso para dar sensação de processamento
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const tokenIdNum = parseInt(tokenId);
+        const amountInWei = ethers.parseEther(amountInEth.toString());
+        
+        if (mockGiftCards.has(tokenIdNum)) {
+          const card = mockGiftCards.get(tokenIdNum);
+          
+          // Verificar se há saldo suficiente
+          if ((card.valor - card.usado) < amountInWei) {
+            throw new Error("Saldo insuficiente para resgatar este valor");
+          }
+          
+          // Marcar o valor como usado
+          card.usado = card.usado + amountInWei;
+          
+          console.log("Valor resgatado com sucesso:", {
+            tokenId: tokenIdNum,
+            amount: amountInEth,
+            remainingBalance: ethers.formatEther(card.valor - card.usado)
+          });
+          
+          return {
+            success: true,
+            tokenId: tokenIdNum.toString(),
+            amount: amountInEth,
+            transactionHash: `mock_tx_${Math.random().toString(36).substring(2, 15)}`
+          };
+        } else {
+          throw new Error("Gift Card não encontrado");
+        }
+        
+      } catch (error: any) {
+        console.error('Erro na simulação de resgate:', error);
+        throw new Error(error.message || 'Falha ao resgatar valor');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    // Implementação real usando o contrato
+    setIsLoading(true);
+    try {
+      const amountInWei = ethers.parseEther(amountInEth.toString());
+      
+      const tx = await contract.redeemGiftCard(tokenId, amountInWei, {
+        gasLimit: 300000
+      });
+      
+      const receipt = await tx.wait();
+      
+      return {
+        success: true,
+        tokenId: tokenId,
+        amount: amountInEth,
+        transactionHash: receipt.hash
+      };
+    } catch (error: any) {
+      console.error('Erro ao resgatar valor:', error);
+      throw new Error(error.message || 'Falha ao resgatar valor do gift card');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     contract,
     isLoading,
@@ -326,6 +509,7 @@ export function useNFTContract() {
     getUserGiftCards,
     redeemGiftCard,
     rechargeGiftCard,
+    gerarTroco,
     isContractReady: !!contract && isConnected
   };
 }
