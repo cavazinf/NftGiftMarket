@@ -372,11 +372,11 @@ const NFTLogin = () => {
                       Email
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="seu@email.com"
+                      placeholder="Digite 'admin' ou seu email"
                       required
                     />
                   </div>
@@ -413,12 +413,27 @@ const NFTLogin = () => {
                 
                 <div className="space-y-2">
                   <div className="bg-blue-900/20 border border-blue-700/30 rounded-md p-3">
-                    <p className="text-xs text-blue-300 font-medium mb-1">
-                      💡 Credenciais de Teste:
-                    </p>
-                    <p className="text-xs text-gray-300">
-                      <strong>Admin:</strong> admin / 123 (Acesso total)
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-blue-300 font-medium mb-1">
+                          💡 Credenciais de Teste:
+                        </p>
+                        <p className="text-xs text-gray-300">
+                          <strong>Admin:</strong> admin / 123 (Acesso total)
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setEmail('admin');
+                          setPassword('123');
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                      >
+                        Preencher
+                      </Button>
+                    </div>
                   </div>
                   
                   <p className="text-sm text-gray-400 text-center">
