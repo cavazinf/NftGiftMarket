@@ -13,6 +13,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useNFTContract } from '@/hooks/useNFTContract';
+import { useWallet } from '@/hooks/useWallet';
 import { 
   Gift, Shield, Wallet, Sparkles, CreditCard, 
   ArrowLeft, Upload, ArrowRight, Check, AlertCircle, 
@@ -25,8 +27,11 @@ import { Badge } from "@/components/ui/badge";
 const CreateGiftCard = () => {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
+  const { mintGiftCard, isLoading: isMinting, isContractReady } = useNFTContract();
+  const { walletAddress, isConnected } = useWallet();
   const [currentStep, setCurrentStep] = useState(1);
   const [currentTab, setCurrentTab] = useState('novo');
+  const [isMintingNFT, setIsMintingNFT] = useState(false);
   
   // Dados do gift card
   const [title, setTitle] = useState('');
