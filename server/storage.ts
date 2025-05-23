@@ -11,7 +11,6 @@ import {
 } from "@shared/schema";
 import { db } from './db';
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { PostgresError } from 'postgres';
 
 export interface IStorage {
   // User operations
@@ -86,8 +85,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [user] = await db.insert(users).values(insertUser).returning();
       return user;
-    } catch (error) {
-      if (error instanceof PostgresError && error.code === '23505') {
+    } catch (error: any) {
+      if (error?.code === '23505') {
         throw new Error('Username já existe');
       }
       throw error;
@@ -134,8 +133,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [merchant] = await db.insert(merchants).values(insertMerchant).returning();
       return merchant;
-    } catch (error) {
-      if (error instanceof PostgresError && error.code === '23505') {
+    } catch (error: any) {
+      if (error?.code === '23505') {
         throw new Error('Merchant já existe');
       }
       throw error;
@@ -182,8 +181,8 @@ export class DatabaseStorage implements IStorage {
     const [giftCard] = await db
       .update(giftCards)
       .set({ 
-        balanceEth: balanceEth,
-        balanceUsd: balanceUsd,
+        balanceEth: String(balanceEth),
+        balanceUsd: String(balanceUsd),
         totalRecharges: sql`${giftCards.totalRecharges} + 1`
       })
       .where(eq(giftCards.id, id))
@@ -324,8 +323,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [category] = await db.insert(categories).values(insertCategory).returning();
       return category;
-    } catch (error) {
-      if (error instanceof PostgresError && error.code === '23505') {
+    } catch (error: any) {
+      if (error?.code === '23505') {
         throw new Error('Categoria já existe');
       }
       throw error;
