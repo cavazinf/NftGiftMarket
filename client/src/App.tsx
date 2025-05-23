@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Marketplace from "@/pages/Marketplace";
 import Features from "@/pages/Features";
 import Login from "@/pages/Login";
+import UnifiedLogin from "@/pages/UnifiedLogin";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 import B2BDashboard from "@/pages/B2BDashboard";
@@ -63,6 +64,7 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
 function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) {
   const [location] = useLocation();
   const showHeaderFooter = !location.includes('/login') && 
+                           !location.includes('/unified-login') && 
                            !location.includes('/dashboard') && 
                            !location.includes('/admin') &&
                            !location.includes('/create-gift-card') &&
@@ -81,7 +83,10 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
         <Route path="/" component={() => <Home />} />
         <Route path="/marketplace" component={() => <Marketplace openNFTModal={openNFTModal} />} />
         <Route path="/features" component={Features} />
-        <Route path="/login" component={Login} />
+        <Route path="/login" component={UnifiedLogin} />
+        <Route path="/unified-login" component={UnifiedLogin} />
+        <Route path="/classic-login" component={Login} />
+        <Route path="/nft-login" component={NFTLogin} />
         <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/admin" component={() => <AdminRoute component={Admin} />} />
         <Route path="/create-gift-card" component={() => <ProtectedRoute component={CreateGiftCard} />} />
@@ -94,7 +99,6 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
         <Route path="/fintech-dapp" component={() => <ProtectedRoute component={FintechDApp} />} />
         <Route path="/collections" component={Collections} />
         <Route path="/dapps" component={DApps} />
-        <Route path="/nft-login" component={NFTLogin} />
         <Route component={NotFound} />
       </Switch>
       {showHeaderFooter && <Footer />}

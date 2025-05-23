@@ -1,6 +1,11 @@
 import { useState, createContext, useContext, ReactNode, useEffect } from "react";
 import { ethers } from "ethers";
 import Web3Modal from "web3modal";
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
 
 interface WalletContextType {
   isConnected: boolean;
@@ -24,7 +29,7 @@ const providerOptions = {
     package: null
   },
   walletconnect: {
-    package: ethers,
+    package: null,
     options: {
       infuraId: "INFURA_ID" // We should set up an Infura ID for production
     }
@@ -93,12 +98,31 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       // Connect to wallet
       const modalProvider = await web3Modal.connect();
-      const ethersProvider = new ethers.providers.Web3Provider(modalProvider);
-      const accounts = await ethersProvider.listAccounts();
-      const network = await ethersProvider.getNetwork();
+      
+      // For compatibility with both ethers v5 and v6
+      let accounts: string[] = [];
+      let chainId: number = 0;
+      
+      try {
+        // Try directly getting accounts from provider first (MetaMask style)
+        if (modalProvider.request) {
+          accounts = await modalProvider.request({ method: 'eth_accounts' });
+          const chainIdHex = await modalProvider.request({ method: 'eth_chainId' });
+          chainId = parseInt(chainIdHex, 16);
+        } else {
+          // Fallback to using ethers
+          const ethersProvider = new ethers.BrowserProvider(modalProvider);
+          const accts = await ethersProvider.listAccounts();
+          accounts = accts.map(a => a.address);
+          const network = await ethersProvider.getNetwork();
+          chainId = Number(network.chainId);
+        }
+      } catch (error) {
+        console.error("Error getting accounts or chain ID", error);
+      }
       
       setProvider(modalProvider);
-      setChainId(network.chainId);
+      setChainId(chainId);
       
       if (accounts.length > 0) {
         const address = accounts[0];
