@@ -35,6 +35,9 @@ const NFTLogin = () => {
   const [userNFTs, setUserNFTs] = useState<NFTAuth[]>([]);
   const [selectedNFT, setSelectedNFT] = useState<NFTAuth | null>(null);
   const [authCode, setAuthCode] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   // Mock NFTs para demonstração
   const mockNFTs: NFTAuth[] = [
@@ -210,18 +213,75 @@ const NFTLogin = () => {
           <CardContent className="space-y-6">
             {/* Passo 1: Conectar Carteira */}
             {currentStep === 1 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {['MetaMask', 'WalletConnect', 'Coinbase'].map((wallet) => (
+              <div className="space-y-6">
+                {/* Login Social */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-4 text-center">Login Social</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <Button
+                      onClick={() => handleSocialLogin('google')}
+                      variant="outline"
+                      className="h-16 flex items-center gap-3 border-gray-600 hover:border-red-500 text-white hover:bg-red-500/10"
+                    >
+                      <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">G</span>
+                      </div>
+                      <span>Google</span>
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleSocialLogin('facebook')}
+                      variant="outline"
+                      className="h-16 flex items-center gap-3 border-gray-600 hover:border-blue-600 text-white hover:bg-blue-600/10"
+                    >
+                      <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">f</span>
+                      </div>
+                      <span>Facebook</span>
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleEmailLogin()}
+                      variant="outline"
+                      className="h-16 flex items-center gap-3 border-gray-600 hover:border-green-500 text-white hover:bg-green-500/10"
+                    >
+                      <Smartphone className="h-6 w-6" />
+                      <span>Email</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-600" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="bg-gray-800 px-4 text-gray-400">
+                      Ou conecte sua carteira Web3
+                    </span>
+                  </div>
+                </div>
+
+                {/* Carteiras Web3 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Button
-                    key={wallet}
-                    onClick={() => handleWalletConnect(wallet)}
+                    onClick={() => handleWalletConnect('MetaMask')}
                     variant="outline"
-                    className="h-20 flex flex-col items-center gap-2 border-gray-600 hover:border-blue-500 text-white hover:bg-blue-500/10"
+                    className="h-16 flex items-center gap-3 border-gray-600 hover:border-orange-500 text-white hover:bg-orange-500/10"
                   >
-                    <Wallet className="h-8 w-8" />
-                    <span>{wallet}</span>
+                    <Wallet className="h-6 w-6" />
+                    <span>MetaMask</span>
                   </Button>
-                ))}
+                  
+                  <Button
+                    onClick={() => handleWalletConnect('WalletConnect')}
+                    variant="outline"
+                    className="h-16 flex items-center gap-3 border-gray-600 hover:border-purple-500 text-white hover:bg-purple-500/10"
+                  >
+                    <Wallet className="h-6 w-6" />
+                    <span>WalletConnect</span>
+                  </Button>
+                </div>
               </div>
             )}
 
