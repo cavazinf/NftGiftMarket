@@ -20,8 +20,8 @@ const Header = ({ openWalletModal }: HeaderProps) => {
 
   const navItems = [
     { title: "Marketplace", path: "/marketplace" },
-    { title: "Recursos", path: "/features" },
     { title: "Collections", path: "/collections" },
+    { title: "DApps", path: "/dapps" },
     { title: "Create", path: "/create" },
     { title: "Dashboard", path: "/dashboard" },
   ];
