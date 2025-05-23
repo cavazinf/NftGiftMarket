@@ -54,7 +54,8 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
   const [location] = useLocation();
   const showHeaderFooter = !location.includes('/login') && 
                            !location.includes('/dashboard') && 
-                           !location.includes('/admin');
+                           !location.includes('/admin') &&
+                           !location.includes('/create-gift-card');
   
   return (
     <>
@@ -66,6 +67,7 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
         <Route path="/login" component={Login} />
         <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/admin" component={() => <AdminRoute component={Admin} />} />
+        <Route path="/create-gift-card" component={() => <ProtectedRoute component={CreateGiftCard} />} />
         <Route component={NotFound} />
       </Switch>
       {showHeaderFooter && <Footer />}
