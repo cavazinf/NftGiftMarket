@@ -3,142 +3,152 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
-    uint256 private _tokenIdCounter;
-    
-    struct GiftCard {
-        string merchantName;
-        string category;
-        uint256 valueInWei;
-        uint256 balanceInWei;
-        bool isRedeemable;
-        bool isRechargeable;
-        uint256 expirationDate;
+contract NFTGiftCard is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
+    struct Saldo {
+        uint256 valor;
+        uint256 usado;
+        string comerciante;
+        string categoria;
+        bool recarregavel;
+        uint256 dataExpiracao;
         string metadata;
     }
-    
-    mapping(uint256 => GiftCard) public giftCards;
-    mapping(address => uint256[]) public userGiftCards;
-    
-    event GiftCardMinted(
-        uint256 indexed tokenId,
-        address indexed recipient,
-        string merchantName,
-        uint256 value
-    );
-    
-    event GiftCardRedeemed(
-        uint256 indexed tokenId,
-        address indexed user,
-        uint256 amount
-    );
-    
-    event GiftCardRecharged(
-        uint256 indexed tokenId,
-        address indexed user,
-        uint256 amount
-    );
-    
+
+    mapping(uint256 => Saldo) private saldos;
+    mapping(address => uint256[]) private userGiftCards;
+    uint256 private _nextTokenId;
+
     constructor() ERC721("NFT Gift Card", "NFTGC") Ownable(msg.sender) {}
-    
+
     function mintGiftCard(
-        address to,
-        string memory merchantName,
-        string memory category,
-        uint256 valueInWei,
-        bool isRechargeable,
-        uint256 expirationDate,
-        string memory _tokenURI,
+        address para,
+        string memory comerciante,
+        string memory categoria,
+        uint256 valorInicial,
+        bool recarregavel,
+        uint256 dataExpiracao,
+        string memory uri,
         string memory metadata
-    ) public payable onlyOwner returns (uint256) {
-        uint256 tokenId = _tokenIdCounter;
-        _tokenIdCounter++;
+    ) public payable returns (uint256) {
+        require(msg.value > 0, "É necessário enviar ETH para criar o cartão");
         
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, _tokenURI);
+        uint256 tokenId = _nextTokenId++;
+        _mint(para, tokenId);
+        _setTokenURI(tokenId, uri);
         
-        // Use the ETH sent with the transaction for the actual balance
-        giftCards[tokenId] = GiftCard({
-            merchantName: merchantName,
-            category: category,
-            valueInWei: valueInWei,
-            balanceInWei: msg.value, // Use actual ETH sent with transaction
-            isRedeemable: true,
-            isRechargeable: isRechargeable,
-            expirationDate: expirationDate,
+        saldos[tokenId] = Saldo({
+            valor: msg.value,
+            usado: 0,
+            comerciante: comerciante,
+            categoria: categoria,
+            recarregavel: recarregavel,
+            dataExpiracao: dataExpiracao,
             metadata: metadata
         });
         
-        userGiftCards[to].push(tokenId);
+        userGiftCards[para].push(tokenId);
         
-        emit GiftCardMinted(tokenId, to, merchantName, valueInWei);
-        
+        emit NovoGiftCard(tokenId, para, msg.value);
         return tokenId;
     }
-    
-    function redeemGiftCard(uint256 tokenId, uint256 amount) public {
-        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
-        require(ownerOf(tokenId) == msg.sender, "Not the owner of this gift card");
-        require(giftCards[tokenId].isRedeemable, "Gift card is not redeemable");
-        require(giftCards[tokenId].balanceInWei >= amount, "Insufficient balance");
-        require(block.timestamp <= giftCards[tokenId].expirationDate, "Gift card has expired");
+
+    function redeemGiftCard(uint256 tokenId, uint256 valor) public nonReentrant {
+        require(ownerOf(tokenId) == msg.sender, "Não autorizado");
+        require(valor <= saldoDisponivel(tokenId), "Saldo insuficiente");
+        require(block.timestamp <= saldos[tokenId].dataExpiracao, "Gift card expirado");
         
-        giftCards[tokenId].balanceInWei -= amount;
-        
-        if (giftCards[tokenId].balanceInWei == 0) {
-            giftCards[tokenId].isRedeemable = false;
-        }
-        
-        emit GiftCardRedeemed(tokenId, msg.sender, amount);
+        saldos[tokenId].usado += valor;
+        emit SaldoGastado(tokenId, valor, saldoDisponivel(tokenId));
     }
-    
-    function rechargeGiftCard(uint256 tokenId) public payable {
-        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
-        require(ownerOf(tokenId) == msg.sender, "Not the owner of this gift card");
-        require(giftCards[tokenId].isRechargeable, "Gift card is not rechargeable");
-        require(msg.value > 0, "Must send some value to recharge");
+
+    function rechargeGiftCard(uint256 tokenId) public payable nonReentrant {
+        require(ownerOf(tokenId) == msg.sender, "Não autorizado");
+        require(saldos[tokenId].recarregavel, "Cartão não é recarregável");
+        require(msg.value > 0, "É necessário enviar ETH para recarregar");
         
-        giftCards[tokenId].balanceInWei += msg.value;
-        giftCards[tokenId].isRedeemable = true;
+        saldos[tokenId].valor += msg.value;
+        emit CartaoRecarregado(tokenId, msg.value, saldoDisponivel(tokenId));
+    }
+
+    function saldoDisponivel(uint256 tokenId) public view returns (uint256) {
+        require(_exists(tokenId), "Token não existe");
+        return saldos[tokenId].valor - saldos[tokenId].usado;
+    }
+
+    function gerarTroco(uint256 tokenId, uint256 valor) public nonReentrant {
+        require(ownerOf(tokenId) == msg.sender, "Não autorizado");
+        uint256 saldoAtual = saldoDisponivel(tokenId);
+        require(saldoAtual >= valor, "Saldo insuficiente para troco");
         
-        emit GiftCardRecharged(tokenId, msg.sender, msg.value);
+        uint256 novoTokenId = _nextTokenId++;
+        _mint(msg.sender, novoTokenId);
+        
+        // Copiar os metadados do cartão original
+        saldos[novoTokenId] = Saldo({
+            valor: valor,
+            usado: 0,
+            comerciante: saldos[tokenId].comerciante,
+            categoria: saldos[tokenId].categoria,
+            recarregavel: saldos[tokenId].recarregavel,
+            dataExpiracao: saldos[tokenId].dataExpiracao,
+            metadata: saldos[tokenId].metadata
+        });
+        
+        // Marcar o valor original como usado
+        saldos[tokenId].usado += valor;
+        
+        userGiftCards[msg.sender].push(novoTokenId);
+        emit TrocoGerado(tokenId, novoTokenId, valor);
     }
-    
-    function getGiftCard(uint256 tokenId) public view returns (GiftCard memory) {
-        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
-        return giftCards[tokenId];
+
+    function _exists(uint256 tokenId) internal view returns (bool) {
+        return _ownerOf(tokenId) != address(0);
     }
-    
+
+    function getGiftCard(uint256 tokenId) public view returns (
+        string memory comerciante,
+        string memory categoria,
+        uint256 valorTotal,
+        uint256 saldoRestante,
+        bool recarregavel,
+        uint256 dataExpiracao,
+        string memory metadata
+    ) {
+        require(_exists(tokenId), "Token não existe");
+        Saldo storage saldo = saldos[tokenId];
+        return (
+            saldo.comerciante,
+            saldo.categoria,
+            saldo.valor,
+            saldo.valor - saldo.usado,
+            saldo.recarregavel,
+            saldo.dataExpiracao,
+            saldo.metadata
+        );
+    }
+
     function getUserGiftCards(address user) public view returns (uint256[] memory) {
         return userGiftCards[user];
     }
-    
-    function getBalance(uint256 tokenId) public view returns (uint256) {
-        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
-        return giftCards[tokenId].balanceInWei;
-    }
-    
+
     function isExpired(uint256 tokenId) public view returns (bool) {
-        require(_ownerOf(tokenId) != address(0), "Gift card does not exist");
-        return block.timestamp > giftCards[tokenId].expirationDate;
+        require(_exists(tokenId), "Token não existe");
+        return block.timestamp > saldos[tokenId].dataExpiracao;
     }
-    
-    function withdraw() public onlyOwner {
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No funds to withdraw");
-        
-        (bool success, ) = payable(owner()).call{value: balance}("");
-        require(success, "Withdrawal failed");
+
+    function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
+        return ERC721URIStorage.tokenURI(tokenId);
     }
-    
-    // Override required functions
-    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
-        return super.tokenURI(tokenId);
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC721URIStorage) returns (bool) {
+        return ERC721.supportsInterface(interfaceId) || ERC721URIStorage.supportsInterface(interfaceId);
     }
-    
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
-        return super.supportsInterface(interfaceId);
-    }
+
+    event NovoGiftCard(uint256 indexed tokenId, address comprador, uint256 saldo);
+    event SaldoGastado(uint256 indexed tokenId, uint256 valor, uint256 saldoRestante);
+    event CartaoRecarregado(uint256 indexed tokenId, uint256 valor, uint256 novoSaldo);
+    event TrocoGerado(uint256 originalTokenId, uint256 novoTokenId, uint256 valor);
 }

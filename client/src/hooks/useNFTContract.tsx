@@ -23,25 +23,28 @@ try {
 }
 
 const CONTRACT_ABI = [
-  "function mintGiftCard(address to, string merchantName, string category, uint256 valueInWei, bool isRechargeable, uint256 expirationDate, string tokenURI, string metadata) public payable returns (uint256)",
-  "function getGiftCard(uint256 tokenId) public view returns (tuple(string merchantName, string category, uint256 valueInWei, uint256 balanceInWei, bool isRedeemable, bool isRechargeable, uint256 expirationDate, string metadata))",
+  "function mintGiftCard(address para, string comerciante, string categoria, uint256 valorInicial, bool recarregavel, uint256 dataExpiracao, string uri, string metadata) public payable returns (uint256)",
+  "function getGiftCard(uint256 tokenId) public view returns (string comerciante, string categoria, uint256 valorTotal, uint256 saldoRestante, bool recarregavel, uint256 dataExpiracao, string metadata)",
   "function getUserGiftCards(address user) public view returns (uint256[])",
-  "function redeemGiftCard(uint256 tokenId, uint256 amount) public",
+  "function redeemGiftCard(uint256 tokenId, uint256 valor) public",
   "function rechargeGiftCard(uint256 tokenId) public payable",
-  "function getBalance(uint256 tokenId) public view returns (uint256)",
+  "function saldoDisponivel(uint256 tokenId) public view returns (uint256)",
   "function ownerOf(uint256 tokenId) public view returns (address)",
-  "event GiftCardMinted(uint256 indexed tokenId, address indexed recipient, string merchantName, uint256 value)"
+  "function gerarTroco(uint256 tokenId, uint256 valor) public",
+  "event NovoGiftCard(uint256 indexed tokenId, address indexed comprador, uint256 saldo)",
+  "event SaldoGastado(uint256 indexed tokenId, uint256 valor, uint256 saldoRestante)",
+  "event CartaoRecarregado(uint256 indexed tokenId, uint256 valor, uint256 novoSaldo)",
+  "event TrocoGerado(uint256 originalTokenId, uint256 novoTokenId, uint256 valor)"
 ];
 
 export interface NFTGiftCardData {
-  merchantName: string;
-  category: string;
-  valueInWei: bigint;
-  balanceInWei: bigint;
-  isRedeemable: boolean;
-  isRechargeable: boolean;
-  expirationDate: bigint;
-  metadata: string;
+  merchantName: string;    // comerciante
+  category: string;        // categoria
+  valueInWei: bigint;      // valorTotal
+  balanceInWei: bigint;    // saldoRestante
+  isRechargeable: boolean; // recarregavel
+  expirationDate: bigint;  // dataExpiracao
+  metadata: string;        // metadata
 }
 
 export function useNFTContract() {
@@ -83,17 +86,16 @@ export function useNFTContract() {
         const valueInWei = ethers.parseEther(valueInEth.toString());
         const expirationDate = Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60);
         
-        // Criar o NFT simulado
+        // Criar o NFT simulado usando a nova estrutura
         const tokenId = mockTokenIdCounter++;
         
         mockGiftCards.set(tokenId, {
-          merchantName: merchantName,
-          category: category,
-          valueInWei: valueInWei,
-          balanceInWei: valueInWei, // O saldo é igual ao valor inicial
-          isRedeemable: true,
-          isRechargeable: isRechargeable,
-          expirationDate: expirationDate,
+          comerciante: merchantName,
+          categoria: category,
+          valor: valueInWei,
+          usado: 0n, // Inicialmente sem uso
+          recarregavel: isRechargeable,
+          dataExpiracao: BigInt(expirationDate),
           metadata: metadata
         });
         
@@ -129,32 +131,32 @@ export function useNFTContract() {
       const expirationDate = Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60);
       
       // Log para debugging
-      console.log("Minting NFT with value:", valueInEth, "ETH");
-      console.log("Value in Wei:", valueInWei.toString());
+      console.log("Criando NFT Gift Card com valor:", valueInEth, "ETH");
+      console.log("Valor em Wei:", valueInWei.toString());
       
-      // Para garantir que o valor seja enviado corretamente com a transação
+      // No novo contrato, os parâmetros são diferentes
       const tx = await contract.mintGiftCard(
-        recipient,
-        merchantName,
-        category,
-        valueInWei,
-        isRechargeable,
-        expirationDate,
-        tokenURI,
-        metadata,
+        recipient,           // para
+        merchantName,        // comerciante
+        category,            // categoria
+        valueInWei,          // valorInicial (será ignorado pois usamos msg.value)
+        isRechargeable,      // recarregavel
+        expirationDate,      // dataExpiracao
+        tokenURI,            // uri
+        metadata,            // metadata
         { 
           value: valueInWei, // Enviamos o ETH com a transação
-          gasLimit: 500000 // Limite de gas adequado para essa operação
+          gasLimit: 500000   // Limite de gas adequado para essa operação
         }
       );
 
       const receipt = await tx.wait();
       
-      // Find the GiftCardMinted event to get the token ID
+      // Encontrar o evento NovoGiftCard para obter o ID do token
       const event = receipt.logs.find((log: any) => {
         try {
           const decoded = contract.interface.parseLog(log);
-          return decoded && decoded.name === 'GiftCardMinted';
+          return decoded && decoded.name === 'NovoGiftCard';
         } catch {
           return false;
         }
@@ -188,13 +190,12 @@ export function useNFTContract() {
       if (mockGiftCards.has(tokenIdNum)) {
         const card = mockGiftCards.get(tokenIdNum);
         return {
-          merchantName: card.merchantName,
-          category: card.category,
-          valueInWei: card.valueInWei,
-          balanceInWei: card.balanceInWei,
-          isRedeemable: card.isRedeemable,
-          isRechargeable: card.isRechargeable,
-          expirationDate: card.expirationDate,
+          merchantName: card.comerciante || card.merchantName,
+          category: card.categoria || card.category,
+          valueInWei: card.valor || card.valueInWei,
+          balanceInWei: card.usado !== undefined ? (card.valor - card.usado) : card.balanceInWei,
+          isRechargeable: card.recarregavel !== undefined ? card.recarregavel : card.isRechargeable,
+          expirationDate: card.dataExpiracao || card.expirationDate,
           metadata: card.metadata
         };
       }
@@ -205,16 +206,25 @@ export function useNFTContract() {
     if (!contract) return null;
 
     try {
-      const result = await contract.getGiftCard(tokenId);
+      // No novo contrato, getGiftCard retorna campos individuais, não uma tupla
+      const [
+        comerciante,
+        categoria,
+        valorTotal,
+        saldoRestante,
+        recarregavel,
+        dataExpiracao,
+        metadata
+      ] = await contract.getGiftCard(tokenId);
+      
       return {
-        merchantName: result[0],
-        category: result[1],
-        valueInWei: result[2],
-        balanceInWei: result[3],
-        isRedeemable: result[4],
-        isRechargeable: result[5],
-        expirationDate: result[6],
-        metadata: result[7]
+        merchantName: comerciante,
+        category: categoria,
+        valueInWei: valorTotal,
+        balanceInWei: saldoRestante,
+        isRechargeable: recarregavel,
+        expirationDate: dataExpiracao,
+        metadata: metadata
       };
     } catch (error) {
       console.error('Error getting gift card:', error);

@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.29;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract CartaoPresenteNFT is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
+    struct Saldo {
+        uint256 valor;
+        uint256 usado;
+    }
+
+    mapping(uint256 => Saldo) private saldos;
+    uint256 private _nextTokenId;
+
+    constructor() ERC721("CartaoPresente", "CPRE") Ownable(msg.sender) {}
+
+    function criarCartaoPresente(
+        address para,
+        uint256 saldoInicial,
+        string memory uri
+    ) public onlyOwner {
+        require(saldoInicial > 0, "Saldo inicial deve ser maior que zero");
+        
+        uint256 tokenId = _nextTokenId++;
+        _mint(para, tokenId);
+        _setTokenURI(tokenId, uri);
+        
+        saldos[tokenId].valor = saldoInicial;
+        emit NovoCartaoPresente(tokenId, para, saldoInicial);
+    }
+
+    function gastarSaldo(uint256 tokenId, uint256 valor) public nonReentrant {
+        require(ownerOf(tokenId) == msg.sender, "Nao autorizado");
+        require(valor <= saldoDisponivel(tokenId), "Saldo insuficiente");
+        
+        saldos[tokenId].usado += valor;
+        emit SaldoGastado(tokenId, valor, saldoDisponivel(tokenId));
+    }
+
+    function saldoDisponivel(uint256 tokenId) public view returns (uint256) {
+        require(exists(tokenId), "Token nao existe");
+        return saldos[tokenId].valor - saldos[tokenId].usado;
+    }
+
+    function gerarTroco(uint256 tokenId, uint256 valor) public onlyOwner {
+        uint256 saldoAtual = saldoDisponivel(tokenId);
+        require(saldoAtual >= valor, "Saldo insuficiente para troco");
+        
+        uint256 novoTokenId = _nextTokenId++;
+        _mint(msg.sender, novoTokenId);
+        
+        saldos[novoTokenId].valor = valor;
+        saldos[novoTokenId].usado = 0;
+        
+        saldos[tokenId].usado += (saldoAtual - valor);
+        
+        emit TrocoGerado(tokenId, novoTokenId, valor);
+    }
+
+    function exists(uint256 tokenId) public view returns (bool) {
+        return ERC721.ownerOf(tokenId) != address(0);
+    }
+
+    function consultarSaldo(uint256 tokenId) public view returns (uint256 saldoAtual, uint256 saldoTotal) {
+        require(exists(tokenId), "Token nao existe");
+        Saldo storage saldo = saldos[tokenId];
+        return (saldo.valor - saldo.usado, saldo.valor);
+    }
+
+    function ownerOf(uint256 tokenId) public view virtual override(ERC721, IERC721) returns (address) {
+        return ERC721.ownerOf(tokenId);
+    }
+
+    function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
+        return ERC721URIStorage.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC721URIStorage) returns (bool) {
+        return ERC721.supportsInterface(interfaceId) || ERC721URIStorage.supportsInterface(interfaceId);
+    }
+
+    event NovoCartaoPresente(uint256 indexed tokenId, address comprador, uint256 saldo);
+    event SaldoGastado(uint256 indexed tokenId, uint256 valor, uint256 saldoRestante);
+    event TrocoGerado(uint256 originalTokenId, uint256 novoTokenId, uint256 valor);
+}
