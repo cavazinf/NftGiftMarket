@@ -181,7 +181,8 @@ export function useNFTContract() {
           });
         } else {
           // ethers v5
-          ethersProvider = new ethers.providers.Web3Provider(provider);
+          const Web3Provider = ethers.providers.Web3Provider;
+          ethersProvider = new Web3Provider(provider);
           const signer = ethersProvider.getSigner();
           const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
           setContract(contractInstance);
@@ -366,7 +367,7 @@ export function useNFTContract() {
       console.log("Usando simulação para obter NFTs do usuário");
       
       if (mockUserGiftCards.has(userAddress)) {
-        return mockUserGiftCards.get(userAddress).map(id => id.toString());
+        return mockUserGiftCards.get(userAddress).map((id: number) => id.toString());
       }
       return [];
     }
@@ -380,6 +381,78 @@ export function useNFTContract() {
     } catch (error) {
       console.error('Error getting user gift cards:', error);
       return [];
+    }
+  };
+
+  const redeemGiftCard = async (tokenId: string, amountInEth: number) => {
+    if (USE_MOCK_CONTRACT || !contract || !walletAddress) {
+      console.log("Usando simulação para resgatar valor do gift card");
+      
+      setIsLoading(true);
+      try {
+        // Simular um atraso para dar sensação de processamento
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const tokenIdNum = parseInt(tokenId);
+        const amountInWei = ethers.parseEther(amountInEth.toString());
+        
+        if (mockGiftCards.has(tokenIdNum)) {
+          const card = mockGiftCards.get(tokenIdNum);
+          
+          // Verificar se há saldo suficiente
+          if ((card.valor - card.usado) < amountInWei) {
+            throw new Error("Saldo insuficiente para resgatar este valor");
+          }
+          
+          // Marcar o valor como usado
+          card.usado = card.usado + amountInWei;
+          
+          console.log("Valor resgatado com sucesso:", {
+            tokenId: tokenIdNum,
+            amount: amountInEth,
+            remainingBalance: ethers.formatEther(card.valor - card.usado)
+          });
+          
+          return {
+            success: true,
+            tokenId: tokenIdNum.toString(),
+            amount: amountInEth,
+            transactionHash: `mock_tx_${Math.random().toString(36).substring(2, 15)}`
+          };
+        } else {
+          throw new Error("Gift Card não encontrado");
+        }
+        
+      } catch (error: any) {
+        console.error('Erro na simulação de resgate:', error);
+        throw new Error(error.message || 'Falha ao resgatar valor');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    // Implementação real usando o contrato
+    setIsLoading(true);
+    try {
+      const amountInWei = ethers.parseEther(amountInEth.toString());
+      
+      const tx = await contract.redeemGiftCard(tokenId, amountInWei, {
+        gasLimit: 300000
+      });
+      
+      const receipt = await tx.wait();
+      
+      return {
+        success: true,
+        tokenId: tokenId,
+        amount: amountInEth,
+        transactionHash: receipt.hash
+      };
+    } catch (error: any) {
+      console.error('Erro ao resgatar valor:', error);
+      throw new Error(error.message || 'Falha ao resgatar valor do gift card');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -405,8 +478,6 @@ export function useNFTContract() {
       setIsLoading(false);
     }
   };
-
-  // Este código foi removido pois era uma duplicação da função redeemGiftCard
 
   return {
     contract,
