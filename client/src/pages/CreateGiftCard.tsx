@@ -124,16 +124,84 @@ const CreateGiftCard = () => {
     }
   };
   
-  // Finalizar criação
-  const finishCreation = () => {
-    toast({
-      title: 'Gift Card criado com sucesso!',
-      description: 'Seu NFT Gift Card foi criado e está pronto para uso.'
-    });
+  // Finalizar criação com mintagem de NFT
+  const finishCreation = async () => {
+    if (!isConnected) {
+      toast({
+        title: 'Carteira não conectada',
+        description: 'Conecte sua carteira para criar o NFT Gift Card.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!isContractReady) {
+      toast({
+        title: 'Contrato não disponível',
+        description: 'O contrato inteligente não está disponível. Tente novamente.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsMintingNFT(true);
     
-    setTimeout(() => {
-      setLocation('/marketplace');
-    }, 1500);
+    try {
+      // Criar metadata JSON para o NFT
+      const metadata = JSON.stringify({
+        name: title,
+        description: description,
+        image: image || 'https://via.placeholder.com/400x300?text=Gift+Card',
+        attributes: [
+          { trait_type: "Category", value: category },
+          { trait_type: "Merchant", value: merchant },
+          { trait_type: "Value USD", value: priceUsd },
+          { trait_type: "Rechargeable", value: isRechargeable ? "Yes" : "No" },
+          { trait_type: "Privacy Enabled", value: isPrivacyEnabled ? "Yes" : "No" },
+          { trait_type: "Features", value: features.join(", ") }
+        ]
+      });
+
+      // Calcular dias até expiração
+      const expirationDays = Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      
+      // Token URI (em produção, seria armazenado em IPFS)
+      const tokenURI = `data:application/json;base64,${btoa(metadata)}`;
+
+      // Mintar o NFT
+      const result = await mintGiftCard(
+        walletAddress!, // Destinatário
+        merchant, // Nome do comerciante
+        category, // Categoria
+        parseFloat(priceUsd), // Valor em ETH
+        isRechargeable, // É recarregável
+        expirationDays, // Dias para expiração
+        tokenURI, // URI dos metadados
+        metadata // Metadados adicionais
+      );
+
+      toast({
+        title: 'NFT Gift Card criado com sucesso! 🎉',
+        description: `Token ID: ${result.tokenId} | Hash: ${result.transactionHash?.slice(0, 10)}...`
+      });
+
+      // Salvar no banco de dados local também
+      // Aqui você pode adicionar uma chamada para a API para salvar no banco
+      
+      setTimeout(() => {
+        setLocation('/marketplace');
+      }, 2000);
+
+    } catch (error: any) {
+      console.error('Erro ao criar NFT:', error);
+      toast({
+        title: 'Erro ao criar NFT Gift Card',
+        description: error.message || 'Ocorreu um erro durante a criação. Tente novamente.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsMintingNFT(false);
+    }
   };
   
   return (
@@ -625,10 +693,20 @@ const CreateGiftCard = () => {
                 ) : (
                   <Button 
                     onClick={finishCreation}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex items-center gap-2"
+                    disabled={isMintingNFT || !isConnected}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Sparkles className="h-4 w-4" />
-                    Criar Gift Card
+                    {isMintingNFT ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Criando NFT...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        {isConnected ? 'Criar NFT Gift Card' : 'Conecte sua carteira'}
+                      </>
+                    )}
                   </Button>
                 )}
               </CardFooter>
