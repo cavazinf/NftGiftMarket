@@ -1,33 +1,39 @@
+
 const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("Deploying NFTGiftCard contract...");
+  console.log("Iniciando deploy do NFTGiftCard...");
 
-  // Get the contract factory
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with account:", deployer.address);
+
   const NFTGiftCard = await ethers.getContractFactory("NFTGiftCard");
-
-  // Deploy the contract
   const nftGiftCard = await NFTGiftCard.deploy();
-
+  
   await nftGiftCard.waitForDeployment();
-
   const contractAddress = await nftGiftCard.getAddress();
   
   console.log("NFTGiftCard deployed to:", contractAddress);
   
-  // Save the contract address for frontend integration
+  // Salvar endereço e ABI para o frontend
   const fs = require("fs");
+  const contractsDir = "./client/src/contracts";
+
+  if (!fs.existsSync(contractsDir)) {
+    fs.mkdirSync(contractsDir);
+  }
+
   const contractInfo = {
     address: contractAddress,
-    abi: nftGiftCard.interface.fragments
+    abi: JSON.parse(NFTGiftCard.interface.formatJson())
   };
   
   fs.writeFileSync(
-    "client/src/contracts/NFTGiftCard.json",
+    `${contractsDir}/NFTGiftCard.json`,
     JSON.stringify(contractInfo, null, 2)
   );
   
-  console.log("Contract info saved to client/src/contracts/NFTGiftCard.json");
+  console.log("Contract info saved to", `${contractsDir}/NFTGiftCard.json`);
 }
 
 main()
