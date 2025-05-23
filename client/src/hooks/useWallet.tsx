@@ -1,4 +1,6 @@
-import { useState, createContext, useContext, ReactNode } from "react";
+import { useState, createContext, useContext, ReactNode, useEffect } from "react";
+import { ethers } from "ethers";
+import Web3Modal from "web3modal";
 
 interface WalletContextType {
   isConnected: boolean;
@@ -6,38 +8,114 @@ interface WalletContextType {
   walletAddress: string | null;
   connect: (type: string) => Promise<void>;
   disconnect: () => void;
+  provider: any;
+  chainId: number | null;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
+// Configure Web3Modal with provider options
+const providerOptions = {
+  injected: {
+    display: {
+      name: "MetaMask",
+      description: "Connect to your MetaMask wallet"
+    },
+    package: null
+  },
+  walletconnect: {
+    package: ethers,
+    options: {
+      infuraId: "INFURA_ID" // We should set up an Infura ID for production
+    }
+  }
+};
+
+let web3Modal: Web3Modal;
+if (typeof window !== 'undefined') {
+  web3Modal = new Web3Modal({
+    cacheProvider: true,
+    providerOptions,
+    theme: "dark"
+  });
+}
+
 export function WalletProvider({ children }: { children: ReactNode }) {
+  const [provider, setProvider] = useState<any>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<number | null>(null);
+
+  // Auto-connect if previously connected
+  useEffect(() => {
+    if (web3Modal && web3Modal.cachedProvider) {
+      connect(web3Modal.cachedProvider);
+    }
+  }, []);
+
+  // Setup event listeners
+  useEffect(() => {
+    if (provider?.on) {
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+        } else {
+          disconnect();
+        }
+      };
+
+      const handleChainChanged = (chainId: number) => {
+        setChainId(chainId);
+      };
+
+      const handleDisconnect = () => {
+        disconnect();
+      };
+
+      provider.on("accountsChanged", handleAccountsChanged);
+      provider.on("chainChanged", handleChainChanged);
+      provider.on("disconnect", handleDisconnect);
+
+      return () => {
+        if (provider.removeListener) {
+          provider.removeListener("accountsChanged", handleAccountsChanged);
+          provider.removeListener("chainChanged", handleChainChanged);
+          provider.removeListener("disconnect", handleDisconnect);
+        }
+      };
+    }
+  }, [provider]);
 
   const connect = async (type: string) => {
-    // In a real application, this would connect to a real wallet
-    // For now, we're just simulating a connection
     try {
       setIsConnecting(true);
       
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Connect to wallet
+      const modalProvider = await web3Modal.connect();
+      const ethersProvider = new ethers.providers.Web3Provider(modalProvider);
+      const accounts = await ethersProvider.listAccounts();
+      const network = await ethersProvider.getNetwork();
       
-      // Generate a mock wallet address
-      const mockAddress = `0x${Math.random().toString(16).slice(2, 10)}...${Math.random().toString(16).slice(2, 6)}`;
+      setProvider(modalProvider);
+      setChainId(network.chainId);
       
-      setWalletAddress(mockAddress);
-      setIsConnected(true);
-      
-      // Simular API call para conectar o wallet ao user
-      await fetch('/api/users/1/connect-wallet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: mockAddress })
-      }).catch(error => {
-        console.warn('API não está ativa, usando mock de conexão');
-      });
+      if (accounts.length > 0) {
+        const address = accounts[0];
+        setWalletAddress(address);
+        setIsConnected(true);
+        
+        // Connect wallet to user in backend
+        try {
+          await fetch('/api/users/connect-wallet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress: address })
+          });
+        } catch (error) {
+          console.warn('API não está disponível, conexão apenas local');
+        }
+      }
 
       return Promise.resolve();
     } catch (error) {
@@ -49,8 +127,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const disconnect = () => {
-    setIsConnected(false);
+    if (web3Modal) {
+      web3Modal.clearCachedProvider();
+    }
+    
+    setProvider(null);
     setWalletAddress(null);
+    setChainId(null);
+    setIsConnected(false);
   };
 
   return (
@@ -59,7 +143,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       isConnecting, 
       walletAddress, 
       connect, 
-      disconnect 
+      disconnect,
+      provider,
+      chainId
     }}>
       {children}
     </WalletContext.Provider>
