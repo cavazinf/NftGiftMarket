@@ -61,7 +61,10 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   return (isAuthenticated && userRole === 'admin') ? <Component /> : null;
 }
 
-function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) {
+function Router({ openNFTModal, openWalletModal }: { 
+  openNFTModal: (nft: NFTGiftCard) => void,
+  openWalletModal: () => void
+}) {
   const [location] = useLocation();
   const showHeaderFooter = !location.includes('/login') && 
                            !location.includes('/unified-login') && 
@@ -78,9 +81,9 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
   
   return (
     <>
-      {showHeaderFooter && <Header openWalletModal={() => {}} />}
+      {showHeaderFooter && <Header openWalletModal={openWalletModal} />}
       <Switch>
-        <Route path="/" component={() => <Home />} />
+        <Route path="/" component={() => <Home openWalletModal={openWalletModal} />} />
         <Route path="/marketplace" component={() => <Marketplace openNFTModal={openNFTModal} />} />
         <Route path="/features" component={Features} />
         <Route path="/login" component={UnifiedLogin} />
@@ -126,7 +129,7 @@ function App() {
         <TooltipProvider>
           <div className="flex flex-col min-h-screen">
             <main className="flex-grow">
-              <Router openNFTModal={openNFTModal} />
+              <Router openNFTModal={openNFTModal} openWalletModal={openWalletModal} />
             </main>
           </div>
           {isNFTModalOpen && selectedNFT && (
