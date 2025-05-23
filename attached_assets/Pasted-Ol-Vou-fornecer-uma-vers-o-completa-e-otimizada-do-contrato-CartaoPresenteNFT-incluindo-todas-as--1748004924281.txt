@@ -1,0 +1,173 @@
+Olá! Vou fornecer uma versão completa e otimizada do contrato CartaoPresenteNFT, incluindo todas as funcionalidades necessárias e melhorias de segurança.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.29;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+/**
+ * @title CartaoPresenteNFT
+ * @author [Seu Nome]
+ * @notice Contrato para gerenciamento de cartões-presente como NFTs
+ * @dev Implementa funcionalidades de saldo, transferência e troco
+ */
+contract CartaoPresenteNFT is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
+    // Estrutura para armazenar informações do saldo
+    struct Saldo {
+        uint256 valor;
+        uint256 usado;
+    }
+
+    // Mapeamento dos saldos por tokenId
+    mapping(uint256 => Saldo) private saldos;
+
+    // Contador para gerar novos tokenIds
+    uint256 private _nextTokenId;
+
+    /**
+     * @dev Construtor que inicializa o contrato com nome e símbolo
+     */
+    constructor() ERC721("CartaoPresente", "CPRE") Ownable(msg.sender) {}
+
+    /**
+     * @notice Função para criar um novo cartão-presente NFT
+     * @param para Endereço que receberá o NFT
+     * @param saldoInicial Valor inicial do cartão-presente
+     * @param uri URI do metadata do NFT
+     */
+    function criarCartaoPresente(
+        address para,
+        uint256 saldoInicial,
+        string memory uri
+    ) public onlyOwner {
+        require(saldoInicial > 0, "Saldo inicial deve ser maior que zero");
+        
+        uint256 tokenId = _nextTokenId++;
+        _mint(para, tokenId);
+        _setTokenURI(tokenId, uri);
+        
+        saldos[tokenId].valor = saldoInicial;
+        emit NovoCartaoPresente(tokenId, para, saldoInicial);
+    }
+
+    /**
+     * @notice Função para gastar saldo de um cartão-presente
+     * @param tokenId ID do token NFT
+     * @param valor Valor a ser gasto
+     */
+    function gastarSaldo(uint256 tokenId, uint256 valor) public nonReentrant {
+        require(ownerOf(tokenId) == msg.sender, "Não autorizado");
+        require(valor <= saldoDisponivel(tokenId), "Saldo insuficiente");
+        
+        saldos[tokenId].usado += valor;
+        emit SaldoGastado(tokenId, valor, saldoDisponivel(tokenId));
+    }
+
+    /**
+     * @notice Função para verificar saldo disponível
+     * @param tokenId ID do token NFT
+     * @return Valor disponível para uso
+     */
+    function saldoDisponivel(uint256 tokenId) public view returns (uint256) {
+        require(exists(tokenId), "Token não existe");
+        return saldos[tokenId].valor - saldos[tokenId].usado;
+    }
+
+    /**
+     * @notice Função para gerar troco quando necessário
+     * @param tokenId ID do token original
+     * @param valor Valor do troco a ser gerado
+     */
+    function gerarTroco(uint256 tokenId, uint256 valor) public onlyOwner {
+        require(ownerOf(tokenId) != address(0), "Token não existe");
+        require(ownerOf(tokenId) == msg.sender, "Não é proprietário do token");
+        
+        uint256 saldoAtual = saldoDisponivel(tokenId);
+        require(saldoAtual >= valor, "Saldo insuficiente para troco");
+        require(valor < saldoAtual, "Valor de troco não pode ser igual ao saldo atual");
+        
+        uint256 novoTokenId = _nextTokenId++;
+        _mint(msg.sender, novoTokenId);
+        
+        saldos[novoTokenId].valor = valor;
+        saldos[novoTokenId].usado = 0;
+        
+        saldos[tokenId].usado += (saldoAtual - valor);
+        
+        emit TrocoGerado(tokenId, novoTokenId, valor);
+    }
+
+    /**
+     * @notice Função para verificar existência do token
+     * @param tokenId ID do token NFT
+     * @return True se o token existe, false caso contrário
+     */
+    function exists(uint256 tokenId) public view returns (bool) {
+        return ERC721.ownerOf(tokenId) != address(0);
+    }
+
+    /**
+     * @notice Função para consultar informações do saldo
+     * @param tokenId ID do token NFT
+     * @return Tuple contendo saldo atual e total
+     */
+    function consultarSaldo(uint256 tokenId) public view returns (uint256 saldoAtual, uint256 saldoTotal) {
+        require(exists(tokenId), "Token não existe");
+        Saldo storage saldo = saldos[tokenId];
+        return (saldo.valor - saldo.usado, saldo.valor);
+    }
+
+    /**
+     * @notice Função para consultar o URI do token
+     * @param tokenId ID do token NFT
+     * @return URI do metadata do token
+     */
+    function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
+        return ERC721URIStorage.tokenURI(tokenId);
+    }
+
+    /**
+     * @notice Função para verificar suporte a interfaces
+     * @param interfaceId ID da interface a ser verificada
+     * @return True se a interface é suportada, false caso contrário
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC721URIStorage) returns (bool) {
+        return ERC721.supportsInterface(interfaceId) || ERC721URIStorage.supportsInterface(interfaceId);
+    }
+
+    // Eventos para rastreamento das operações
+    event NovoCartaoPresente(uint256 indexed tokenId, address comprador, uint256 saldo);
+    event SaldoGastado(uint256 indexed tokenId, uint256 valor, uint256 saldoRestante);
+    event TrocoGerado(uint256 originalTokenId, uint256 novoTokenId, uint256 valor);
+}
+```
+
+###  Principais Melhorias Implementadas
+
+1. **Segurança**  - Validações completas em todas as funções
+  - Proteção contra reentrância usando `nonReentrant`
+  - Controle de acesso com `onlyOwner`
+  - Verificações de existência e propriedade dos tokens
+
+
+2. **Documentação**  - Comentários detalhados em português
+  - Documentation tags para melhor compreensão
+  - Descrição clara das funções e eventos
+
+
+3. **Organização**  - Estrutura modular e bem organizada
+  - Separação clara de responsabilidades
+  - Nomenclatura consistente em português
+
+
+4. **Funcionalidade**  - Gerenciamento completo de saldos
+  - Sistema robusto de troco
+  - Rastreamento detalhado através de eventos
+
+
+
+Este contrato está pronto para uso e implementa todas as funcionalidades necessárias para um sistema de cartões-presente baseado em NFTs, com ênfase especial na segurança e manutenibilidade do código.

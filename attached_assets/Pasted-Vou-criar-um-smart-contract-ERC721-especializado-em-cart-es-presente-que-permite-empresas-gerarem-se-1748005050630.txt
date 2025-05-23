@@ -1,0 +1,148 @@
+Vou criar um smart contract ERC721 especializado em cartões-presente que permite empresas gerarem seus próprios cartões com saldo interno, permitindo transações semelhantes às batalhas Pokémon, onde o saldo diminui gradualmente até zerar.
+
+```mermaid
+sequenceDiagram
+    participant Empresa
+    participant Contrato
+    participant Cliente
+
+    Note over Empresa,Cliente: Criação do Cartão-Presente
+    Empresa->>Contrato: criarCartaoPresente(saldoInicial)
+    Contrato-->>Empresa: ID do NFT criado
+
+    Note over Empresa,Cliente: Uso do Cartão-Presente
+    Cliente->>Contrato: gastarSaldo(valor)
+    Contrato-->>Cliente: Saldo atualizado
+
+    Note over Empresa,Cliente: Sistema de Troco
+    Empresa->>Contrato: gerarTroco(idNFT, valor)
+    Contrato-->>Empresa: Novo NFT com troco
+```
+
+O diagrama acima mostra os três processos principais do nosso sistema:
+
+1. **Criação do Cartão-Presente**: A empresa cria um novo NFT com um saldo inicial definido
+2. **Uso do Cartão-Presente**: O cliente pode gastar parte do saldo, similar a uma batalha Pokémon onde os pontos são consumidos
+3. **Sistema de Troco**: Quando necessário, a empresa pode gerar um novo NFT com o valor restante
+
+Aqui está a implementação completa do contrato inteligente:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract CartaoPresenteNFT is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
+    struct Saldo {
+        uint256 valor;
+        uint256 usado;
+    }
+
+    mapping(uint256 => Saldo) private saldos;
+    
+    constructor() ERC721("Cartão Presente", "CPRE") {}
+
+    function criarCartaoPresente(
+        address para,
+        uint256 saldoInicial,
+        string memory uri
+    ) public onlyOwner {
+        require(saldoInicial > 0, "Saldo inicial deve ser maior que zero");
+        
+        uint256 tokenId = totalSupply();
+        _mint(para, tokenId);
+        _setTokenURI(tokenId, uri);
+        
+        saldos[tokenId].valor = saldoInicial;
+        emit NovoCartaoPresente(tokenId, para, saldoInicial);
+    }
+
+    function gastarSaldo(uint256 tokenId, uint256 valor) public nonReentrant {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "Não autorizado");
+        require(valor <= saldoDisponivel(tokenId), "Saldo insuficiente");
+        
+        saldos[tokenId].usado += valor;
+        emit SaldoGastado(tokenId, valor, saldoDisponivel(tokenId));
+    }
+
+    function saldoDisponivel(uint256 tokenId) public view returns (uint256) {
+        require(_exists(tokenId), "Token não existe");
+        return saldos[tokenId].valor - saldos[tokenId].usado;
+    }
+
+    function gerarTroco(uint256 tokenId, uint256 valor) public onlyOwner {
+        uint256 saldoAtual = saldoDisponivel(tokenId);
+        require(saldoAtual >= valor, "Saldo insuficiente para troco");
+        
+        uint256 novoTokenId = totalSupply();
+        _mint(msg.sender, novoTokenId);
+        
+        saldos[novoTokenId].valor = valor;
+        saldos[novoTokenId].usado = 0;
+        
+        saldos[tokenId].usado += (saldoAtual - valor);
+        
+        emit TrocoGerado(tokenId, novoTokenId, valor);
+    }
+
+    event NovoCartaoPresente(uint256 indexed tokenId, address comprador, uint256 saldo);
+    event SaldoGastado(uint256 indexed tokenId, uint256 valor, uint256 saldoRestante);
+    event TrocoGerado(uint256 originalTokenId, uint256 novoTokenId, uint256 valor);
+}
+```
+
+O contrato inclui as seguintes funcionalidades principais:
+
+### 1. Criação de Cartões-Presente
+
+- A função `criarCartaoPresente` permite que empresas criem NFTs com saldo inicial
+- O contrato mantém um registro do saldo total e usado para cada token
+- Utiliza o padrão ERC721 para garantir unicidade dos cartões
+
+### 2. Sistema de Gastos
+
+- A função `gastarSaldo` permite gastar parte do valor do cartão
+- Implementa proteção contra reentrância para segurança
+- Verifica automaticamente se há saldo suficiente antes da transação
+
+### 3. Gerenciamento de Saldo
+
+- A função `saldoDisponivel` retorna o saldo atual do cartão
+- O sistema rastreia tanto o valor total quanto o já utilizado
+- Permite acompanhar o histórico de gastos
+
+### 4. Sistema de Troco
+
+- A função `gerarTroco` cria um novo NFT com o valor restante
+- Mantém a integridade do sistema de saldos
+- Permite que empresas gerenciem múltiplos cartões de troco
+
+### Como Usar o Contrato
+
+ Deploy do Contrato- Compile e deploy o contrato em uma rede Ethereum compatível
+- Configure a empresa como owner do contrato
+
+ Criando Cartões-Presente```solidity
+// Exemplo de criação de um cartão-presente de 100 ETH
+cartaoPresente.criarCartaoPresente(
+    enderecoCliente,
+    100 ether,
+    "https://metadata.cartaopresente.com/token/123"
+);
+```
+
+ Realizando Gastos```solidity
+// Exemplo de gasto de 30 ETH
+cartaoPresente.gastarSaldo(tokenId, 30 ether);
+```
+
+ Gerando Troco```solidity
+// Exemplo de geração de troco de 20 ETH
+cartaoPresente.gerarTroco(tokenId, 20 ether);
+```
+
+Este contrato oferece uma solução completa e segura para empresas criar e gerenciar seus próprios cartões-presente na blockchain, com todas as funcionalidades necessárias para um sistema de pontos/gastos similar às batalhas Pokémon.

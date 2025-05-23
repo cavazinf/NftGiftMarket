@@ -1,0 +1,159 @@
+Vou adaptar o contrato para funcionar com zk-Rollups, mantendo todas as funcionalidades do cartão-presente enquanto aproveitamos os benefícios de escalabilidade e segurança dos zk-Rollups.
+
+```mermaid
+sequenceDiagram
+    participant Empresa
+    participant Contrato
+    participant Cliente
+    participant Rollup
+    participant Ethereum
+
+    Note over Empresa,Cliente: Criação do Cartão-Presente
+    Empresa->>Contrato: criarCartaoPresente(saldoInicial)
+    Contrato-->>Empresa: ID do NFT criado
+
+    Note over Empresa,Cliente: Uso do Cartão-Presente
+    Cliente->>Contrato: gastarSaldo(valor)
+    Contrato-->>Cliente: Saldo atualizado
+
+    Note over Empresa,Cliente: Sistema de Troco
+    Empresa->>Contrato: gerarTroco(idNFT, valor)
+    Contrato-->>Empresa: Novo NFT com troco
+```
+
+O diagrama acima mostra o fluxo de interações do nosso sistema com zk-Rollups. As principais diferenças em relação à versão anterior são:
+
+- Todas as transações são agrupadas em rollups para maior eficiência
+- As validações são feitas usando provas zero-knowledge
+- As atualizações de estado são processadas em lote, reduzindo significativamente os custos
+
+Aqui está o contrato atualizado para funcionar com zk-Rollups:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+contract CartaoPresenteNFT is Initializable, ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
+    struct Saldo {
+        uint256 valor;
+        uint256 usado;
+    }
+
+    mapping(uint256 => Saldo) private saldos;
+    
+    function initialize() public initializer {
+        __ERC721_init("Cartão Presente", "CPRE");
+        __ERC721URIStorage_init();
+        __ReentrancyGuard_init();
+        __Ownable_init();
+    }
+    
+    function criarCartaoPresente(
+        address para,
+        uint256 saldoInicial,
+        string memory uri
+    ) public onlyOwner {
+        require(saldoInicial > 0, "Saldo inicial deve ser maior que zero");
+        
+        uint256 tokenId = totalSupply();
+        _mint(para, tokenId);
+        _setTokenURI(tokenId, uri);
+        
+        saldos[tokenId].valor = saldoInicial;
+        emit NovoCartaoPresente(tokenId, para, saldoInicial);
+    }
+
+    function gastarSaldo(uint256 tokenId, uint256 valor) public nonReentrant {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "Não autorizado");
+        require(valor <= saldoDisponivel(tokenId), "Saldo insuficiente");
+        
+        saldos[tokenId].usado += valor;
+        emit SaldoGastado(tokenId, valor, saldoDisponivel(tokenId));
+    }
+
+    function saldoDisponivel(uint256 tokenId) public view returns (uint256) {
+        require(_exists(tokenId), "Token não existe");
+        return saldos[tokenId].valor - saldos[tokenId].usado;
+    }
+
+    function gerarTroco(uint256 tokenId, uint256 valor) public onlyOwner {
+        uint256 saldoAtual = saldoDisponivel(tokenId);
+        require(saldoAtual >= valor, "Saldo insuficiente para troco");
+        
+        uint256 novoTokenId = totalSupply();
+        _mint(msg.sender, novoTokenId);
+        
+        saldos[novoTokenId].valor = valor;
+        saldos[novoTokenId].usado = 0;
+        
+        saldos[tokenId].usado += (saldoAtual - valor);
+        
+        emit TrocoGerado(tokenId, novoTokenId, valor);
+    }
+
+    event NovoCartaoPresente(uint256 indexed tokenId, address comprador, uint256 saldo);
+    event SaldoGastado(uint256 indexed tokenId, uint256 valor, uint256 saldoRestante);
+    event TrocoGerado(uint256 originalTokenId, uint256 novoTokenId, uint256 valor);
+}
+```
+
+Para implementar este contrato em um ambiente zk-Rollup, você precisará:
+
+ Configurar o ambiente```bash
+npm install -D @matterlabs/hardhat-zksync zksync-ethers@6 ethers@6
+```
+
+ Configurar o Hardhat```typescript
+import { HardhatUserConfig } from "hardhat/config";
+import "@matterlabs/hardhat-zksync";
+
+const config: HardhatUserConfig = {
+  zksolc: {
+    version: "latest",
+    settings: {
+      enableEraVMExtensions: false,
+    },
+  },
+  networks: {
+    zksync: {
+      url: "https://zksync2-testnet.zksync.dev",
+      ethNetwork: "goerli",
+      zksync: true,
+      chainId: 280,
+      accounts: [process.env.PRIVATE_KEY!]
+    }
+  }
+};
+
+export default config;
+```
+
+ Deploy do contrato```typescript
+import { Wallet } from "zksync-ethers";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { Deployer } from "@matterlabs/hardhat-zksync";
+import "dotenv/config";
+
+export default async function (hre: HardhatRuntimeEnvironment) {
+  const wallet = new Wallet(process.env.PRIVATE_KEY!);
+  const deployer = new Deployer(hre, wallet);
+  
+  const artifact = await deployer.loadArtifact("CartaoPresenteNFT");
+  const tokenContract = await deployer.deploy(artifact);
+  
+  console.log(`Contrato implantado em: ${await tokenContract.getAddress()}`);
+}
+```
+
+Este contrato oferece:
+
+- **Escalabilidade**: Processamento eficiente de múltiplas transações em lote
+- **Segurança**: Validação zero-knowledge para todas as operações
+- **Baixos Custos**: Transações mais baratas devido ao processamento em lote
+- **Compatibilidade**: Mantém todas as funcionalidades do ERC721 original

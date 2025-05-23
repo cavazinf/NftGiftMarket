@@ -1,0 +1,207 @@
+Vou apresentar o diagrama com um novo esquema de cores, mantendo a mesma estrutura clara e organizada:
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as Frontend
+    participant W as Web3.js
+    participant SC as Smart Contract
+
+    %% Criar Cartão Presente
+    rect rgb(240, 248, 255)
+        Note over U,SC: Fluxo de Criação
+        U->>F: Solicita criar cartão-presente
+        activate F
+        F->>W: Chama função criarCartaoPresente
+        activate W
+        W->>SC: Executa transação
+        activate SC
+        Note over SC: Valida:<br/>• Saldo inicial > 0<br/>• Permissões de owner
+        SC-->>W: Confirma criação
+        deactivate SC
+        W-->>F: Retorna token ID
+        deactivate W
+        F-->>U: Mostra confirmação
+        deactivate F
+    end
+
+    %% Consultar Saldo
+    rect rgb(255, 248, 240)
+        Note over U,SC: Fluxo de Consulta
+        U->>F: Solicita consultar saldo
+        activate F
+        F->>W: Chama função saldoDisponivel
+        activate W
+        W->>SC: Executa chamada view
+        activate SC
+        Note over SC: Calcula:<br/>saldoTotal - usado
+        SC-->>W: Retorna saldo atual
+        deactivate SC
+        W-->>F: Retorna dados
+        deactivate W
+        F-->>U: Mostra saldo atual
+        deactivate F
+    end
+
+    %% Gastar Saldo
+    rect rgb(255, 245, 238)
+        Note over U,SC: Fluxo de Gasto
+        U->>F: Solicita gastar saldo
+        activate F
+        F->>W: Chama função gastarSaldo
+        activate W
+        W->>SC: Executa transação
+        activate SC
+        Note over SC: Valida:<br/>• Proprietário<br/>• Saldo suficiente
+        SC-->>W: Confirma gasto
+        deactivate SC
+        W-->>F: Retorna confirmação
+        deactivate W
+        F-->>U: Mostra novo saldo
+        deactivate F
+    end
+```
+
+No diagrama acima:
+
+- As caixas coloridas agrupam operações relacionadas:
+          - Azul: Operações de criação
+  - Laranja: Consultas de dados
+  - Vermelho: Operações de gasto
+
+
+- As linhas verticais mostram quando cada componente está processando
+- "View" indica uma chamada que apenas lê dados sem custo de gas
+
+###  Implementação Detalhada
+
+Para tornar o código mais organizado e legível, vamos estruturar cada componente em arquivos separados com responsabilidades claras:
+
+```javascript
+// config.js
+export const CONFIG = {
+  CONTRACT_ADDRESS: 'SEU_ENDERECO_CONTRATO',
+  ABI: SEU_ABI,
+  GAS_LIMIT: '2000000'
+};
+
+// contractService.js
+import Web3 from 'web3';
+import { CONFIG } from './config';
+
+class ContractService {
+  constructor() {
+    this.web3 = new Web3(window.ethereum);
+    this.contract = new this.web3.eth.Contract(
+      CONFIG.ABI,
+      CONFIG.CONTRACT_ADDRESS
+    );
+  }
+
+  async conectarWallet() {
+    const accounts = await window.ethereum.request({
+      method: 'eth_requestAccounts'
+    });
+    return accounts[0];
+  }
+}
+
+export const contractService = new ContractService();
+
+// cartaoPresenteService.js
+import { contractService } from './contractService';
+
+class CartaoPresenteService {
+  async criarCartaoPresente(valor, uri) {
+    const conta = await contractService.conectarWallet();
+    
+    return await contractService.contract.methods
+      .criarCartaoPresente(conta, valor, uri)
+      .send({
+        from: conta,
+        gas: CONFIG.GAS_LIMIT
+      });
+  }
+
+  async consultarSaldo(tokenId) {
+    return await contractService.contract.methods
+      .saldoDisponivel(tokenId)
+      .call();
+  }
+
+  async gastarSaldo(tokenId, valor) {
+    const conta = await contractService.conectarWallet();
+    
+    return await contractService.contract.methods
+      .gastarSaldo(tokenId, valor)
+      .send({
+        from: conta,
+        gas: CONFIG.GAS_LIMIT
+      });
+  }
+}
+
+export const cartaoPresenteService = new CartaoPresenteService();
+
+// App.js
+import { cartaoPresenteService } from './cartaoPresenteService';
+
+function App() {
+  const [saldo, setSaldo] = useState(null);
+
+  const handleCriarCartao = async () => {
+    try {
+      const resultado = await cartaoPresenteService.criarCartaoPresente(
+        '100',
+        'https://seu-uri.com'
+      );
+      console.log('Cartão criado:', resultado);
+    } catch (erro) {
+      console.error('Erro ao criar cartão:', erro);
+    }
+  };
+
+  const handleConsultarSaldo = async (tokenId) => {
+    try {
+      const saldoAtual = await cartaoPresenteService.consultarSaldo(tokenId);
+      setSaldo(saldoAtual);
+    } catch (erro) {
+      console.error('Erro ao consultar saldo:', erro);
+    }
+  };
+
+  return (
+    <div className="app">
+      <button onClick={handleCriarCartao}>
+        Criar Cartão-Presente
+      </button>
+      
+      <button onClick={() => handleConsultarSaldo('TOKEN_ID')}>
+        Consultar Saldo
+      </button>
+      
+      {saldo && <div>Saldo atual: {saldo}</div>}
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Principais Melhorias na Estrutura
+
+1. **Separação de Responsabilidades**:
+          - Configurações em arquivo separado
+  - Serviços independentes para cada funcionalidade
+  - Componentes reutilizáveis
+
+
+2. **Tratamento de Erros**:
+          - Try/catch em todas as operações assíncronas
+  - Feedback claro para o usuário
+  - Logs de erro para debugging
+
+
+3. **Organização do Código**:
+          - Classes bem definidas
+  -

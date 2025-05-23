@@ -1,0 +1,108 @@
+Analisaremos em detalhes este sistema de NFT-Card com validação ZK, focando na arquitetura e implementação seguras.
+
+### Visão Geral do Sistema
+
+O sistema combina três conceitos principais:
+
+1. NFTs para representar cartões únicos
+2. Cartões pré-pagos com funcionalidade de recarga
+3. Validação ZK para garantir privacidade nos gastos
+
+```mermaid
+classDiagram
+    class User {
+        +address wallet
+        +connectWallet()
+    }
+    class VoucherContract {
+        +mintCard(to, metadata, initialBalance)
+        +rechargeCard(tokenId, amount)
+        +redeemWithProof(tokenId, proof, publicSignals)
+        +getBalance(tokenId): uint256
+    }
+    class NFTCard {
+        +uint256 tokenId
+        +string metadata
+        +uint256 balance
+        +uint256 expiration
+        +enum status { Ativo, Expirado, Usado }
+    }
+    class ZKVerifier {
+        +verifyProof(a,b,c,publicSignals): bool
+    }
+
+    User --> VoucherContract : chama  
+    VoucherContract --> NFTCard : gerencia dados  
+    VoucherContract --> ZKVerifier : valida prova  
+    NFTCard --> User : pertence a
+```
+
+Os componentes do sistema têm papéis específicos:
+
+- `User`: Representa o proprietário do cartão, com capacidade de conectar sua carteira digital
+- `VoucherContract`: Contrato principal que gerencia todas as operações do cartão
+- `NFTCard`: Estrutura de dados que armazena informações do cartão (saldo, validade, status)
+- `ZKVerifier`: Componente responsável pela verificação das provas zero-knowledge
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as VoucherContract
+    participant Z as ZKVerifier
+    participant N as NFTCard
+
+    U->>C: mintCard(to=U, md, initBal)
+    C->>N: _safeMint(to, id), balance=initBal
+    N-->>C: tokenId
+
+    U->>C: rechargeCard(tokenId, amount)
+    C->>N: N.balance += amount
+
+    U->>C: generateProof(tokenId, amount)
+    U->>C: redeemWithProof(tokenId, proof, pubSignals)
+    C->>Z: verifyProof(proof, pubSignals)
+    Z-->>C: true
+    C->>N: N.balance -= amount
+    C->>N: if balance=0 status=Used
+    C-->>U: OK
+```
+
+O fluxo mostrado acima representa três operações principais:
+
+1. **Criação do Cartão**: O usuário solicita a criação do cartão através de `mintCard`, recebendo um token ID único
+2. **Recarga**: O proprietário pode recarregar o saldo usando `rechargeCard`
+3. **Resgate com Prova ZK**: O processo mais complexo, onde o usuário gera uma prova zero-knowledge que é verificada antes do débito
+
+### Implementação do Contrato Smart
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./Verifier.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract GiftCardZK is ERC721, Ownable, Verifier {
+    uint256 public nextId;
+    
+    struct Card {
+        uint256 balance;      // Saldo atual
+        uint256 expiration;   // Data de expiração
+        bool used;           // Status de uso
+    }
+    
+    mapping(uint256=>Card) public cards;
+
+    constructor() ERC721("GiftCardZK","GCZK"){}
+
+    function mintCard(address to, uint256 initBal, uint256 expiration) external onlyOwner {
+        uint256 id = ++nextId;
+        _safeMint(to, id);
+        cards[id] = Card(initBal, expiration, false);
+    }
+
+    function rechargeCard(uint256 tokenId, uint256 amount) external onlyOwner {
+        require(_exists(tokenId), "no exist");
+
+```
