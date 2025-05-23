@@ -17,6 +17,8 @@ import ZKPrivacy from "@/pages/ZKPrivacy";
 import B2BScanner from "@/pages/B2BScanner";
 import B2CWallet from "@/pages/B2CWallet";
 import FintechDApp from "@/pages/FintechDApp";
+import Collections from "@/pages/Collections";
+import DApps from "@/pages/DApps";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -88,6 +90,8 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
         <Route path="/b2b-scanner" component={() => <ProtectedRoute component={B2BScanner} />} />
         <Route path="/b2c-wallet" component={() => <ProtectedRoute component={B2CWallet} />} />
         <Route path="/fintech-dapp" component={() => <ProtectedRoute component={FintechDApp} />} />
+        <Route path="/collections" component={Collections} />
+        <Route path="/dapps" component={DApps} />
         <Route component={NotFound} />
       </Switch>
       {showHeaderFooter && <Footer />}
