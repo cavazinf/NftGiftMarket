@@ -2,10 +2,22 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from './useWallet';
 
-// This will be populated when contract is deployed
-const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Local hardhat default
+// Deployed contract address
+// Get this from your deployment logs or NFTGiftCard.json
+let CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Default address
+
+// Try to load from the contracts file if available
+try {
+  const NFTcontractInfo = require('../contracts/NFTGiftCard.json');
+  if (NFTcontractInfo && NFTcontractInfo.address) {
+    CONTRACT_ADDRESS = NFTcontractInfo.address;
+  }
+} catch (e) {
+  console.warn("Could not find contract address from JSON, using default");
+}
+
 const CONTRACT_ABI = [
-  "function mintGiftCard(address to, string merchantName, string category, uint256 valueInWei, bool isRechargeable, uint256 expirationDate, string tokenURI, string metadata) public returns (uint256)",
+  "function mintGiftCard(address to, string merchantName, string category, uint256 valueInWei, bool isRechargeable, uint256 expirationDate, string tokenURI, string metadata) public payable returns (uint256)",
   "function getGiftCard(uint256 tokenId) public view returns (tuple(string merchantName, string category, uint256 valueInWei, uint256 balanceInWei, bool isRedeemable, bool isRechargeable, uint256 expirationDate, string metadata))",
   "function getUserGiftCards(address user) public view returns (uint256[])",
   "function redeemGiftCard(uint256 tokenId, uint256 amount) public",
@@ -62,6 +74,9 @@ export function useNFTContract() {
       const valueInWei = ethers.parseEther(valueInEth.toString());
       const expirationDate = Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60);
       
+      console.log("Minting NFT with value:", valueInEth, "ETH");
+      
+      // Send value with the transaction to fund the NFT balance
       const tx = await contract.mintGiftCard(
         recipient,
         merchantName,
@@ -70,7 +85,8 @@ export function useNFTContract() {
         isRechargeable,
         expirationDate,
         tokenURI,
-        metadata
+        metadata,
+        { value: valueInWei } // Send ETH with the transaction
       );
 
       const receipt = await tx.wait();

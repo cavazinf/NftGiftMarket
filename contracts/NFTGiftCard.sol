@@ -52,18 +52,19 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, Ownable {
         uint256 expirationDate,
         string memory _tokenURI,
         string memory metadata
-    ) public onlyOwner returns (uint256) {
+    ) public payable onlyOwner returns (uint256) {
         uint256 tokenId = _tokenIdCounter;
         _tokenIdCounter++;
         
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, _tokenURI);
         
+        // Use the ETH sent with the transaction for the actual balance
         giftCards[tokenId] = GiftCard({
             merchantName: merchantName,
             category: category,
             valueInWei: valueInWei,
-            balanceInWei: valueInWei,
+            balanceInWei: msg.value, // Use actual ETH sent with transaction
             isRedeemable: true,
             isRechargeable: isRechargeable,
             expirationDate: expirationDate,
