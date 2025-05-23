@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, Gift, CreditCard, Bell, Coins, Users, Store } from 'lucide-react';
+import { Loader2, AlertCircle, Gift, CreditCard, Bell, Coins, Users, Store, Shield } from 'lucide-react';
 
 // Dashboard Principal
 const Dashboard = () => {
@@ -65,15 +65,32 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mr-2"
-            onClick={() => setLocation('/b2b-dashboard')}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Acesso B2B
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLocation('/b2b-dashboard')}
+            >
+              <Users className="h-4 w-4 mr-1" />
+              B2B
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLocation('/defi')}
+            >
+              <Coins className="h-4 w-4 mr-1" />
+              DeFi
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLocation('/zk-privacy')}
+            >
+              <Shield className="h-4 w-4 mr-1" />
+              ZK Proof
+            </Button>
+          </div>
           <div>
             <p className="text-sm font-medium">Carteira Conectada</p>
             <p className="text-xs text-muted-foreground">

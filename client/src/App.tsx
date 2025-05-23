@@ -12,6 +12,8 @@ import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 import B2BDashboard from "@/pages/B2BDashboard";
 import CreateGiftCard from "@/pages/CreateGiftCard";
+import DeFi from "@/pages/DeFi";
+import ZKPrivacy from "@/pages/ZKPrivacy";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -58,7 +60,9 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
                            !location.includes('/dashboard') && 
                            !location.includes('/admin') &&
                            !location.includes('/create-gift-card') &&
-                           !location.includes('/b2b-dashboard');
+                           !location.includes('/b2b-dashboard') &&
+                           !location.includes('/defi') &&
+                           !location.includes('/zk-privacy');
   
   return (
     <>
@@ -72,6 +76,8 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
         <Route path="/admin" component={() => <AdminRoute component={Admin} />} />
         <Route path="/create-gift-card" component={() => <ProtectedRoute component={CreateGiftCard} />} />
         <Route path="/b2b-dashboard" component={() => <ProtectedRoute component={B2BDashboard} />} />
+        <Route path="/defi" component={() => <ProtectedRoute component={DeFi} />} />
+        <Route path="/zk-privacy" component={() => <ProtectedRoute component={ZKPrivacy} />} />
         <Route component={NotFound} />
       </Switch>
       {showHeaderFooter && <Footer />}
