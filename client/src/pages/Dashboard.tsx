@@ -65,6 +65,15 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center space-x-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mr-2"
+            onClick={() => setLocation('/b2b-dashboard')}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Acesso B2B
+          </Button>
           <div>
             <p className="text-sm font-medium">Carteira Conectada</p>
             <p className="text-xs text-muted-foreground">

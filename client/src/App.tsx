@@ -10,6 +10,8 @@ import Features from "@/pages/Features";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
+import B2BDashboard from "@/pages/B2BDashboard";
+import CreateGiftCard from "@/pages/CreateGiftCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -55,7 +57,8 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
   const showHeaderFooter = !location.includes('/login') && 
                            !location.includes('/dashboard') && 
                            !location.includes('/admin') &&
-                           !location.includes('/create-gift-card');
+                           !location.includes('/create-gift-card') &&
+                           !location.includes('/b2b-dashboard');
   
   return (
     <>
@@ -68,6 +71,7 @@ function Router({ openNFTModal }: { openNFTModal: (nft: NFTGiftCard) => void }) 
         <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/admin" component={() => <AdminRoute component={Admin} />} />
         <Route path="/create-gift-card" component={() => <ProtectedRoute component={CreateGiftCard} />} />
+        <Route path="/b2b-dashboard" component={() => <ProtectedRoute component={B2BDashboard} />} />
         <Route component={NotFound} />
       </Switch>
       {showHeaderFooter && <Footer />}
