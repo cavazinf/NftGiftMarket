@@ -135,14 +135,8 @@ const CreateGiftCard = () => {
       return;
     }
 
-    if (!isContractReady) {
-      toast({
-        title: 'Contrato não disponível',
-        description: 'O contrato inteligente não está disponível. Tente novamente.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    // Remover esta verificação para permitir a criação mesmo sem contrato disponível
+    // O hook useNFTContract irá usar simulação quando o contrato não estiver disponível
 
     setIsMintingNFT(true);
     

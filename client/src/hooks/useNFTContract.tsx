@@ -92,10 +92,10 @@ export function useNFTContract() {
         mockGiftCards.set(tokenId, {
           comerciante: merchantName,
           categoria: category,
-          valor: valueInWei,
-          usado: 0n, // Inicialmente sem uso
+          valor: ethers.parseEther(valueInEth.toString()),
+          usado: ethers.parseEther("0"), // Inicialmente sem uso
           recarregavel: isRechargeable,
-          dataExpiracao: BigInt(expirationDate),
+          dataExpiracao: ethers.getBigInt(expirationDate),
           metadata: metadata
         });
         
