@@ -28,7 +28,9 @@ const CreateGiftCard = () => {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const { mintGiftCard, isLoading: isMinting, isContractReady } = useNFTContract();
-  const { walletAddress, isConnected } = useWallet();
+  const { walletAddress, isConnected, provider } = useWallet();
+  // Importar ethers para formatação de valores
+  const ethers = require('ethers');
   const [currentStep, setCurrentStep] = useState(1);
   const [currentTab, setCurrentTab] = useState('novo');
   const [isMintingNFT, setIsMintingNFT] = useState(false);
@@ -166,7 +168,11 @@ const CreateGiftCard = () => {
       const valueInEth = parseFloat(calculateEth(priceUsd));
       console.log("Valor em ETH a ser enviado:", valueInEth);
       
-      // Mintar o NFT com o saldo
+      // Simulamos a verificação de saldo suficiente (em ambiente de produção, isso seria verificado pela carteira)
+      // Em um ambiente de desenvolvimento, assumimos que há saldo suficiente
+      console.log("Valor em ETH necessário:", valueInEth, "ETH");
+      
+      // Mintar o NFT com o saldo da carteira
       const result = await mintGiftCard(
         walletAddress!, // Destinatário
         merchant, // Nome do comerciante

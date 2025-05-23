@@ -55,9 +55,26 @@ export function useNFTContract() {
   useEffect(() => {
     if (provider && isConnected) {
       try {
-        const signer = provider.getSigner();
-        const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        setContract(contractInstance);
+        // Criando um ethers provider a partir do web3 provider
+        let ethersProvider;
+        
+        // Para compatibilidade com diferentes versões do ethers
+        if (ethers.BrowserProvider) {
+          // ethers v6
+          ethersProvider = new ethers.BrowserProvider(provider);
+          ethersProvider.getSigner().then(signer => {
+            const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+            setContract(contractInstance);
+          }).catch(err => {
+            console.error('Error getting signer:', err);
+          });
+        } else {
+          // ethers v5
+          ethersProvider = new ethers.providers.Web3Provider(provider);
+          const signer = ethersProvider.getSigner();
+          const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+          setContract(contractInstance);
+        }
       } catch (error) {
         console.error('Error creating contract instance:', error);
       }
