@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from './useWallet';
+import { getNetworkConfig, getContractAddress } from '@/lib/networks';
 import NFTGiftCardContract from '@/contracts/NFTGiftCard.json';
 
 export interface MintGiftCardParams {
@@ -27,23 +28,33 @@ export interface GiftCardData {
 }
 
 export const useNFTContract = () => {
-  const { provider, walletAddress, isConnected } = useWallet();
+  const { provider, walletAddress, isConnected, chainId } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getContract = useCallback(async () => {
-    if (!provider || !NFTGiftCardContract.address) {
-      throw new Error('Provider ou endereço do contrato não disponível');
+    if (!provider || !chainId) {
+      throw new Error('Provider ou chain ID não disponível');
+    }
+
+    const networkConfig = getNetworkConfig(chainId);
+    if (!networkConfig) {
+      throw new Error(`Rede ${chainId} não suportada`);
+    }
+
+    const contractAddress = getContractAddress(networkConfig.name) || NFTGiftCardContract.address;
+    if (!contractAddress) {
+      throw new Error(`Contrato não deployado na rede ${networkConfig.displayName}`);
     }
 
     const ethersProvider = new ethers.BrowserProvider(provider);
     const signer = await ethersProvider.getSigner();
     return new ethers.Contract(
-      NFTGiftCardContract.address,
+      contractAddress,
       NFTGiftCardContract.abi,
       signer
     );
-  }, [provider]);
+  }, [provider, chainId]);
 
   const mintGiftCard = useCallback(async (params: MintGiftCardParams) => {
     if (!isConnected || !walletAddress) {
@@ -228,7 +239,8 @@ export const useNFTContract = () => {
     // State
     isLoading,
     error,
-    contractAddress: NFTGiftCardContract.address,
+    contractAddress: chainId ? (getContractAddress(getNetworkConfig(chainId)?.name || '') || NFTGiftCardContract.address) : NFTGiftCardContract.address,
+    currentNetwork: chainId ? getNetworkConfig(chainId) : null,
     
     // Utils
     clearError: () => setError(null)

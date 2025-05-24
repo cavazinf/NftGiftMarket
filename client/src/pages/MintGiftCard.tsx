@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/hooks/useWallet';
 import { useNFTContract, MintGiftCardParams } from '@/hooks/useNFTContract';
+import { NetworkSelector } from '@/components/NetworkSelector';
 import { 
   Gift, 
   Wallet, 
@@ -59,7 +60,7 @@ const categories = [
 
 export default function MintGiftCard() {
   const { isConnected, walletAddress, connect } = useWallet();
-  const { mintGiftCard, isLoading, error, contractAddress } = useNFTContract();
+  const { mintGiftCard, isLoading, error, contractAddress, currentNetwork } = useNFTContract();
   const { toast } = useToast();
   const [mintResult, setMintResult] = useState<{
     success: boolean;
