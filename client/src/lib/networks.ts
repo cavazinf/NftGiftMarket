@@ -16,12 +16,12 @@ export const SUPPORTED_NETWORKS: Record<string, NetworkConfig> = {
   sepolia: {
     chainId: 11155111,
     name: 'sepolia',
-    displayName: 'Ethereum Sepolia',
-    rpcUrl: 'https://eth-sepolia.g.alchemy.com/v2/demo',
+    displayName: 'Sepolia Testnet',
+    rpcUrl: 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY',
     blockExplorer: 'https://sepolia.etherscan.io',
     nativeCurrency: {
       name: 'Sepolia Ether',
-      symbol: 'ETH',
+      symbol: 'SepoliaETH',
       decimals: 18
     },
     testnet: true

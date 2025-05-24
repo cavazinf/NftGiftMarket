@@ -24,10 +24,14 @@ module.exports = {
       chainId: 31337
     },
     sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY",
+      url: process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/YOUR_INFURA_KEY",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 11155111,
-      gasPrice: 20000000000 // 20 gwei
+      gasPrice: 20000000000, // 20 gwei
+      gas: 2100000,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true
     },
     amoy: {
       url: "https://rpc-amoy.polygon.technology/",

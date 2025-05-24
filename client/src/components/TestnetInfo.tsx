@@ -7,17 +7,17 @@ import { ExternalLink, Droplets, Info, Zap } from 'lucide-react';
 export function TestnetInfo() {
   const testnetResources = [
     {
-      network: 'Polygon Amoy',
+      network: 'Polygon Amoy Testnet',
       symbol: 'MATIC',
       faucet: 'https://faucet.polygon.technology/',
       explorer: 'https://amoy.polygonscan.com/',
       chainId: 80002,
-      description: 'Testnet da Polygon para desenvolvimento'
+      description: 'Testnet da Polygon para desenvolvimento de dApps'
     },
     {
-      network: 'Ethereum Sepolia',
-      symbol: 'ETH',
-      faucet: 'https://sepoliafaucet.com/',
+      network: 'Sepolia Testnet', 
+      symbol: 'SepoliaETH',
+      faucet: 'https://sepolia-faucet.pk910.de/',
       explorer: 'https://sepolia.etherscan.io/',
       chainId: 11155111,
       description: 'Testnet oficial do Ethereum'
