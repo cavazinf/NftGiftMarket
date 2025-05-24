@@ -32,7 +32,7 @@ const Header = ({ openWalletModal }: HeaderProps) => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-2">
             <Link href="/">
-              <a className="text-primary font-bold text-2xl">NFTGift</a>
+              <span className="text-primary font-bold text-2xl cursor-pointer">NFTGift</span>
             </Link>
             <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
               BETA
@@ -42,9 +42,9 @@ const Header = ({ openWalletModal }: HeaderProps) => {
           <div className="hidden md:flex items-center space-x-4">
             {navItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <a className={`px-4 py-2 rounded-lg text-dark dark:text-light hover:bg-gray-100 dark:hover:bg-gray-800 transition ${location === item.path ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                <span className={`px-4 py-2 rounded-lg text-dark dark:text-light hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer ${location === item.path ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
                   {item.title}
-                </a>
+                </span>
               </Link>
             ))}
           </div>
@@ -95,9 +95,9 @@ const Header = ({ openWalletModal }: HeaderProps) => {
           <div className="container mx-auto px-4 space-y-2">
             {navItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <div className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg ${location === item.path ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                <span className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer ${location === item.path ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
                   {item.title}
-                </div>
+                </span>
               </Link>
             ))}
             <div className="relative mt-2">
