@@ -24,6 +24,7 @@ import NFTLogin from "@/pages/NFTLogin";
 import UseGiftCard from "@/pages/UseGiftCard";
 import CreateChange from "@/pages/CreateChange";
 import MerchantPayment from "@/pages/MerchantPayment";
+import MintGiftCard from "@/pages/MintGiftCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -74,6 +75,7 @@ function Router({ openNFTModal, openWalletModal }: {
                            !location.includes('/dashboard') && 
                            !location.includes('/admin') &&
                            !location.includes('/create-gift-card') &&
+                           !location.includes('/mint-gift-card') &&
                            !location.includes('/use-gift-card') &&
                            !location.includes('/create-change') &&
                            !location.includes('/merchant-payment') &&
