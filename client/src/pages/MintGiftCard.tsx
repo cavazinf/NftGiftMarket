@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/hooks/useWallet';
 import { useNFTContract, MintGiftCardParams } from '@/hooks/useNFTContract';
 import { NetworkSelector } from '@/components/NetworkSelector';
+import { TestnetInfo } from '@/components/TestnetInfo';
 import { 
   Gift, 
   Wallet, 
@@ -390,6 +391,12 @@ export default function MintGiftCard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Network Selector */}
+            <NetworkSelector />
+            
+            {/* Testnet Info */}
+            <TestnetInfo />
+            
             {/* Wallet Info */}
             <Card>
               <CardHeader>

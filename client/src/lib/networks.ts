@@ -29,8 +29,8 @@ export const SUPPORTED_NETWORKS: Record<string, NetworkConfig> = {
   amoy: {
     chainId: 80002,
     name: 'amoy',
-    displayName: 'Polygon Amoy',
-    rpcUrl: 'https://rpc-amoy.polygon.technology',
+    displayName: 'Polygon Amoy Testnet',
+    rpcUrl: 'https://rpc-amoy.polygon.technology/',
     blockExplorer: 'https://amoy.polygonscan.com',
     nativeCurrency: {
       name: 'MATIC',

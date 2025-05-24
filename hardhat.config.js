@@ -30,10 +30,14 @@ module.exports = {
       gasPrice: 20000000000 // 20 gwei
     },
     amoy: {
-      url: process.env.AMOY_RPC_URL || "https://rpc-amoy.polygon.technology",
+      url: "https://rpc-amoy.polygon.technology/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 80002,
-      gasPrice: 30000000000 // 30 gwei
+      gasPrice: 30000000000, // 30 gwei
+      gas: 2100000,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true
     }
   },
   paths: {
