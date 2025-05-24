@@ -1,19 +1,14 @@
-
-import { ethers } from "hardhat";
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
   console.log("Iniciando deploy do NFTGiftCard...");
 
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await hre.ethers.getSigners();
   console.log("Deploying contracts with account:", deployer.address);
 
-  const NFTGiftCard = await ethers.getContractFactory("NFTGiftCard");
+  const NFTGiftCard = await hre.ethers.getContractFactory("NFTGiftCard");
   const nftGiftCard = await NFTGiftCard.deploy();
   
   await nftGiftCard.waitForDeployment();
