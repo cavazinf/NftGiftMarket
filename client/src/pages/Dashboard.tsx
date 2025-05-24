@@ -17,8 +17,9 @@ const Dashboard = () => {
 
   // Verificar se o usuário está autenticado
   useEffect(() => {
-    // Se não estiver conectado, redirecionar para login
-    if (!isConnected) {
+    // Verificar se tem autenticação por carteira OU login tradicional
+    const isAuthenticated = localStorage.getItem('user_authenticated') === 'true';
+    if (!isConnected && !isAuthenticated) {
       setLocation('/login');
     }
   }, [isConnected, setLocation]);
@@ -47,7 +48,10 @@ const Dashboard = () => {
     enabled: isConnected,
   });
 
-  if (!isConnected) {
+  // Verificar autenticação
+  const isAuthenticated = localStorage.getItem('user_authenticated') === 'true';
+  
+  if (!isConnected && !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-[70vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

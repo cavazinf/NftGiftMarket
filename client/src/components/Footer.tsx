@@ -9,7 +9,7 @@ const Footer = () => {
           <div>
             <div className="text-2xl font-bold mb-5 flex items-center">
               <Link href="/">
-                <a className="text-white">NFTGift</a>
+                <span className="text-white cursor-pointer">NFTGift</span>
               </Link>
               <span className="ml-2 bg-primary/20 text-primary text-xs px-2 py-1 rounded-full">
                 BETA
@@ -39,27 +39,27 @@ const Footer = () => {
             <ul className="space-y-3">
               <li>
                 <Link href="/marketplace">
-                  <a className="text-gray-400 hover:text-white transition">All NFTs</a>
+                  <span className="text-gray-400 hover:text-white transition cursor-pointer">All NFTs</span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?category=gaming">
-                  <a className="text-gray-400 hover:text-white transition">Gaming</a>
+                  <span className="text-gray-400 hover:text-white transition cursor-pointer">Gaming</span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?category=restaurants">
-                  <a className="text-gray-400 hover:text-white transition">Restaurants</a>
+                  <span className="text-gray-400 hover:text-white transition cursor-pointer">Restaurants</span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?category=travel">
-                  <a className="text-gray-400 hover:text-white transition">Travel</a>
+                  <span className="text-gray-400 hover:text-white transition cursor-pointer">Travel</span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?category=entertainment">
-                  <a className="text-gray-400 hover:text-white transition">Entertainment</a>
+                  <span className="text-gray-400 hover:text-white transition cursor-pointer">Entertainment</span>
                 </Link>
               </li>
             </ul>
