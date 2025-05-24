@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract NFTGiftCard is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
@@ -33,7 +33,7 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
         string memory uri,
         string memory metadata
     ) public payable returns (uint256) {
-        require(msg.value > 0, "É necessário enviar ETH para criar o cartão");
+        require(msg.value > 0, "ETH required to create gift card");
         
         uint256 tokenId = _nextTokenId++;
         _mint(para, tokenId);
@@ -56,18 +56,18 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
     }
 
     function redeemGiftCard(uint256 tokenId, uint256 valor) public nonReentrant {
-        require(ownerOf(tokenId) == msg.sender, "Não autorizado");
-        require(valor <= saldoDisponivel(tokenId), "Saldo insuficiente");
-        require(block.timestamp <= saldos[tokenId].dataExpiracao, "Gift card expirado");
+        require(ownerOf(tokenId) == msg.sender, "Not authorized");
+        require(valor <= saldoDisponivel(tokenId), "Insufficient balance");
+        require(block.timestamp <= saldos[tokenId].dataExpiracao, "Gift card expired");
         
         saldos[tokenId].usado += valor;
         emit SaldoGastado(tokenId, valor, saldoDisponivel(tokenId));
     }
 
     function rechargeGiftCard(uint256 tokenId) public payable nonReentrant {
-        require(ownerOf(tokenId) == msg.sender, "Não autorizado");
-        require(saldos[tokenId].recarregavel, "Cartão não é recarregável");
-        require(msg.value > 0, "É necessário enviar ETH para recarregar");
+        require(ownerOf(tokenId) == msg.sender, "Not authorized");
+        require(saldos[tokenId].recarregavel, "Card not rechargeable");
+        require(msg.value > 0, "ETH required to recharge");
         
         saldos[tokenId].valor += msg.value;
         emit CartaoRecarregado(tokenId, msg.value, saldoDisponivel(tokenId));

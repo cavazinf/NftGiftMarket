@@ -101,6 +101,7 @@ function Router({ openNFTModal, openWalletModal }: {
         <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/admin" component={() => <AdminRoute component={Admin} />} />
         <Route path="/create-gift-card" component={() => <ProtectedRoute component={CreateGiftCard} />} />
+        <Route path="/mint-gift-card" component={() => <ProtectedRoute component={MintGiftCard} />} />
         <Route path="/create" component={() => <ProtectedRoute component={CreateGiftCard} />} />
         <Route path="/b2b-dashboard" component={() => <ProtectedRoute component={B2BDashboard} />} />
         <Route path="/defi" component={() => <ProtectedRoute component={DeFi} />} />
