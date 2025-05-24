@@ -74,14 +74,14 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
     }
 
     function saldoDisponivel(uint256 tokenId) public view returns (uint256) {
-        require(_exists(tokenId), "Token não existe");
+        require(_exists(tokenId), "Token does not exist");
         return saldos[tokenId].valor - saldos[tokenId].usado;
     }
 
     function gerarTroco(uint256 tokenId, uint256 valor) public nonReentrant {
-        require(ownerOf(tokenId) == msg.sender, "Não autorizado");
+        require(ownerOf(tokenId) == msg.sender, "Not authorized");
         uint256 saldoAtual = saldoDisponivel(tokenId);
-        require(saldoAtual >= valor, "Saldo insuficiente para troco");
+        require(saldoAtual >= valor, "Insufficient balance for change");
         
         uint256 novoTokenId = _nextTokenId++;
         _mint(msg.sender, novoTokenId);
@@ -117,7 +117,7 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
         uint256 dataExpiracao,
         string memory metadata
     ) {
-        require(_exists(tokenId), "Token não existe");
+        require(_exists(tokenId), "Token does not exist");
         Saldo storage saldo = saldos[tokenId];
         return (
             saldo.comerciante,
@@ -135,7 +135,7 @@ contract NFTGiftCard is ERC721, ERC721URIStorage, ReentrancyGuard, Ownable {
     }
 
     function isExpired(uint256 tokenId) public view returns (bool) {
-        require(_exists(tokenId), "Token não existe");
+        require(_exists(tokenId), "Token does not exist");
         return block.timestamp > saldos[tokenId].dataExpiracao;
     }
 
